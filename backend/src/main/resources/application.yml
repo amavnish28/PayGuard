@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: payguard-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payguard
+    username: payguard
+    password: payguard_dev_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
