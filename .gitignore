@@ -42,3 +42,9 @@ Thumbs.db
 # Test / coverage
 coverage/
 .pytest_cache/
+
+ml-service/data/*
+!ml-service/data/.gitkeep
+ml-service/model_store/*
+!ml-service/model_store/.gitkeep
+.ipynb_checkpoints/

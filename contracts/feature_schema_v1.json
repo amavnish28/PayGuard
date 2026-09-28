@@ -1,0 +1,17 @@
+{
+  "schema_version": "1",
+  "description": "Feature contract shared by ML training, FastAPI serving, and Spring Boot. Spring sends RAW values; scaling/encoding lives inside the saved sklearn Pipeline.",
+  "features": [
+    {"name": "amount", "type": "float", "min": 0.01, "source": "transactions.amount"},
+    {"name": "transactions_last_2_min", "type": "int", "min": 0, "source": "transaction_features.transactions_last_2_min"},
+    {"name": "transactions_last_1_hour", "type": "int", "min": 0, "source": "transaction_features.transactions_last_1_hour"},
+    {"name": "account_avg_amount", "type": "float", "min": 0, "source": "transaction_features.account_avg_amount"},
+    {"name": "amount_ratio", "type": "float", "min": 0, "max": 999999.9999, "source": "transaction_features.amount_ratio"},
+    {"name": "time_since_previous_seconds", "type": "float", "min": -1, "source": "transaction_features.time_since_previous_transaction_seconds", "note": "-1 means no previous transaction (database NULL is mapped to -1)"},
+    {"name": "is_first_transaction", "type": "int", "allowed": [0, 1], "source": "derived: account has no previous transaction"},
+    {"name": "new_device", "type": "int", "allowed": [0, 1], "source": "transaction_features.new_device"},
+    {"name": "new_location", "type": "int", "allowed": [0, 1], "source": "transaction_features.new_location"},
+    {"name": "transaction_hour", "type": "int", "min": 0, "max": 23, "source": "transaction_features.transaction_hour (business zone Asia/Kolkata)"},
+    {"name": "odd_hour", "type": "int", "allowed": [0, 1], "source": "transaction_features.odd_hour"}
+  ]
+}
