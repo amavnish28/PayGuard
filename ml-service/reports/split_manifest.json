@@ -1,0 +1,56 @@
+{
+  "seed": 42,
+  "fractions": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "before_dedup": {
+    "rows": 284807,
+    "fraud_count": 492,
+    "fraud_percentage": 0.1727485630620034
+  },
+  "after_dedup": {
+    "rows": 283726,
+    "fraud_count": 473,
+    "fraud_percentage": 0.1667101358352777,
+    "duplicate_rows_removed": 1081,
+    "duplicate_fraud_removed": 19
+  },
+  "splits": {
+    "train": {
+      "rows": 198608,
+      "fraud_count": 331,
+      "fraud_percentage": 0.16665995327479255,
+      "time_min": 0.0,
+      "time_max": 172792.0
+    },
+    "val": {
+      "rows": 42559,
+      "fraud_count": 71,
+      "fraud_percentage": 0.1668272280833666,
+      "time_min": 10.0,
+      "time_max": 172782.0
+    },
+    "test": {
+      "rows": 42559,
+      "fraud_count": 71,
+      "fraud_percentage": 0.1668272280833666,
+      "time_min": 2.0,
+      "time_max": 172786.0
+    }
+  },
+  "before_dedup_rows": 284807,
+  "before_dedup_fraud_count": 492,
+  "after_dedup_rows": 283726,
+  "after_dedup_fraud_count": 473,
+  "train_rows": 198608,
+  "train_fraud_count": 331,
+  "train_fraud_percentage": 0.16665995327479255,
+  "val_rows": 42559,
+  "val_fraud_count": 71,
+  "val_fraud_percentage": 0.1668272280833666,
+  "test_rows": 42559,
+  "test_fraud_count": 71,
+  "test_fraud_percentage": 0.1668272280833666
+}

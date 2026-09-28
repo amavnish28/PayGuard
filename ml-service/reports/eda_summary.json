@@ -1,0 +1,94 @@
+{
+  "class_counts": {
+    "0": 284315,
+    "1": 492,
+    "total": 284807
+  },
+  "fraud_percentage": 0.1727485630620034,
+  "duplicates": {
+    "exact_duplicate_rows": 1081,
+    "fraud_duplicate_rows": 19,
+    "fraud_count_after_dedup": 473,
+    "total_rows_after_dedup": 283726
+  },
+  "amount_summary": {
+    "class_0": {
+      "min": 0.0,
+      "median": 22.0,
+      "mean": 88.29102242231328,
+      "p95": 364.40899999999965,
+      "p99": 1016.9663999999966,
+      "max": 25691.16
+    },
+    "class_1": {
+      "min": 0.0,
+      "median": 9.25,
+      "mean": 122.21132113821139,
+      "p95": 640.9049999999999,
+      "p99": 1357.427899999999,
+      "max": 2125.87
+    }
+  },
+  "per_class_means_amount": {
+    "0": 88.29102242231328,
+    "1": 122.21132113821139
+  },
+  "time_summary": {
+    "min": 0.0,
+    "max": 172792.0,
+    "span_seconds": 172792.0,
+    "span_hours": 47.99777777777778
+  },
+  "top_10_correlated_features": [
+    {
+      "feature": "V17",
+      "correlation": -0.3264810672437138,
+      "abs_correlation": 0.3264810672437138
+    },
+    {
+      "feature": "V14",
+      "correlation": -0.3025436958044035,
+      "abs_correlation": 0.3025436958044035
+    },
+    {
+      "feature": "V12",
+      "correlation": -0.26059292487721686,
+      "abs_correlation": 0.26059292487721686
+    },
+    {
+      "feature": "V10",
+      "correlation": -0.21688294364102748,
+      "abs_correlation": 0.21688294364102748
+    },
+    {
+      "feature": "V16",
+      "correlation": -0.19653894030401806,
+      "abs_correlation": 0.19653894030401806
+    },
+    {
+      "feature": "V3",
+      "correlation": -0.19296082706741338,
+      "abs_correlation": 0.19296082706741338
+    },
+    {
+      "feature": "V7",
+      "correlation": -0.18725659151429688,
+      "abs_correlation": 0.18725659151429688
+    },
+    {
+      "feature": "V11",
+      "correlation": 0.154875644743947,
+      "abs_correlation": 0.154875644743947
+    },
+    {
+      "feature": "V4",
+      "correlation": 0.13344748623900424,
+      "abs_correlation": 0.13344748623900424
+    },
+    {
+      "feature": "V18",
+      "correlation": -0.11148525388904085,
+      "abs_correlation": 0.11148525388904085
+    }
+  ]
+}
