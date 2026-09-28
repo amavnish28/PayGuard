@@ -23,4 +23,5 @@ payguard:
   jwt:
     secret: ${PAYGUARD_JWT_SECRET:change-this-development-secret-to-a-long-random-value}
     expiration-ms: 86400000
+  business-zone: ${PAYGUARD_BUSINESS_ZONE:Asia/Kolkata}
 
