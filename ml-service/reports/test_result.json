@@ -1,0 +1,18 @@
+{
+  "winning_model": "xgboost",
+  "winning_imbalance": "class_weight",
+  "applied_threshold": 0.9974108338356018,
+  "test_pr_auc": 0.8270381873580686,
+  "test_roc_auc": 0.9697057793948781,
+  "precision": 0.9795918367346939,
+  "recall": 0.676056338028169,
+  "f1": 0.8,
+  "fpr": 2.3536057239691207e-05,
+  "confusion_matrix": {
+    "tn": 42487,
+    "fp": 1,
+    "fn": 23,
+    "tp": 48
+  },
+  "refit_time_seconds": 9.179757400066592
+}

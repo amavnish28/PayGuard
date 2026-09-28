@@ -1,0 +1,19 @@
+{
+  "winner": {
+    "model": "xgboost",
+    "imbalance": "class_weight"
+  },
+  "model": "xgboost",
+  "imbalance": "class_weight",
+  "val_pr_auc": 0.8717250614144268,
+  "val_roc_auc": 0.983116028121279,
+  "val_tuned_threshold": 0.9974108338356018,
+  "cv_pr_auc_mean": 0.8560894686210428,
+  "cv_pr_auc_std": 0.05011160981173563,
+  "precision": 1.0,
+  "recall": 0.8169014084507042,
+  "f1": 0.8992248062015504,
+  "fpr": 0.0,
+  "f1_at_05": 0.8805970149253731,
+  "fit_time_seconds": 9.108777899993584
+}
