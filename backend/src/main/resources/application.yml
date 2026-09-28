@@ -18,3 +18,9 @@ spring:
 
 server:
   port: 8080
+
+payguard:
+  jwt:
+    secret: ${PAYGUARD_JWT_SECRET:change-this-development-secret-to-a-long-random-value}
+    expiration-ms: 86400000
+
