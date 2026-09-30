@@ -24,4 +24,19 @@ payguard:
     secret: ${PAYGUARD_JWT_SECRET:change-this-development-secret-to-a-long-random-value}
     expiration-ms: 86400000
   business-zone: ${PAYGUARD_BUSINESS_ZONE:Asia/Kolkata}
+  ml-service:
+    base-url: ${PAYGUARD_ML_BASE_URL:http://localhost:8001}
+    timeout-ms: 150
+    failure-rate-threshold: 50
+    sliding-window-size: 10
+    wait-duration-in-open-state-seconds: 10
+    minimum-number-of-calls: 5
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      mlService:
+        failure-rate-threshold: 50
+        sliding-window-size: 10
+        wait-duration-in-open-state: 10s
+        minimum-number-of-calls: 5

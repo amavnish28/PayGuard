@@ -86,7 +86,7 @@ CREATE TABLE alerts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     transaction_id UUID NOT NULL UNIQUE REFERENCES transactions(id) ON DELETE CASCADE,
     fraud_probability NUMERIC(5,4) CHECK (fraud_probability BETWEEN 0 AND 1),
-    rule_score NUMERIC(5,4),
+    rule_score NUMERIC(5,2),
     final_score NUMERIC(5,4),
     decision alert_decision NOT NULL,
     severity severity_level,

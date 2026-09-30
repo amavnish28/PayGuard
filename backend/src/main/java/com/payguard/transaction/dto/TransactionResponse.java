@@ -16,6 +16,12 @@ public class TransactionResponse {
     private List<String> triggeredRules;
     private List<String> reasons;
 
+    // TODO: Do NOT expose shapReasons or the internal alert id in this response yet
+    // (that belongs to a dedicated alert-detail endpoint in a later phase).
+    private Boolean mlAvailable;
+    private Double fraudProbability;
+    private String mlBand;
+
     public TransactionResponse() {
     }
 
@@ -33,6 +39,20 @@ public class TransactionResponse {
         this.ruleScore = ruleScore;
         this.triggeredRules = triggeredRules != null ? triggeredRules : new ArrayList<>();
         this.reasons = reasons != null ? reasons : new ArrayList<>();
+    }
+
+    public TransactionResponse(String transactionId, String decision, String message,
+                               Integer ruleScore, List<String> triggeredRules, List<String> reasons,
+                               Boolean mlAvailable, Double fraudProbability, String mlBand) {
+        this.transactionId = transactionId;
+        this.decision = decision;
+        this.message = message;
+        this.ruleScore = ruleScore;
+        this.triggeredRules = triggeredRules != null ? triggeredRules : new ArrayList<>();
+        this.reasons = reasons != null ? reasons : new ArrayList<>();
+        this.mlAvailable = mlAvailable;
+        this.fraudProbability = fraudProbability;
+        this.mlBand = mlBand;
     }
 
     public String getTransactionId() {
@@ -81,5 +101,33 @@ public class TransactionResponse {
 
     public void setReasons(List<String> reasons) {
         this.reasons = reasons;
+    }
+
+    public Boolean getMlAvailable() {
+        return mlAvailable;
+    }
+
+    public Boolean isMlAvailable() {
+        return mlAvailable;
+    }
+
+    public void setMlAvailable(Boolean mlAvailable) {
+        this.mlAvailable = mlAvailable;
+    }
+
+    public Double getFraudProbability() {
+        return fraudProbability;
+    }
+
+    public void setFraudProbability(Double fraudProbability) {
+        this.fraudProbability = fraudProbability;
+    }
+
+    public String getMlBand() {
+        return mlBand;
+    }
+
+    public void setMlBand(String mlBand) {
+        this.mlBand = mlBand;
     }
 }
