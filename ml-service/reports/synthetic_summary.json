@@ -1,0 +1,64 @@
+{
+  "total_rows": 447386,
+  "fraud_count": 4347,
+  "fraud_rate": 0.00972,
+  "counts_per_scenario": {
+    "LEGIT": 443039,
+    "ACCOUNT_TAKEOVER": 997,
+    "CARD_TESTING": 2201,
+    "ODD_HOUR_TRANSFER": 479,
+    "SUBTLE": 490,
+    "STEALTH": 180
+  },
+  "splits": {
+    "train": {
+      "total": 312167,
+      "fraud": 3119,
+      "fraud_rate": 0.00999
+    },
+    "val": {
+      "total": 67804,
+      "fraud": 606,
+      "fraud_rate": 0.00894
+    },
+    "test": {
+      "total": 67415,
+      "fraud": 622,
+      "fraud_rate": 0.00923
+    }
+  },
+  "per_scenario_any_rule_fraction": {
+    "LEGIT": 0.069,
+    "ACCOUNT_TAKEOVER": 0.9589,
+    "CARD_TESTING": 0.503,
+    "ODD_HOUR_TRANSFER": 0.9353,
+    "SUBTLE": 0.3265,
+    "STEALTH": 0.0056
+  },
+  "rules_metrics_any_rule": {
+    "recall": 0.6147,
+    "precision": 0.0804,
+    "false_positive_rate": 0.069
+  },
+  "rules_metrics_score_ge_30": {
+    "recall": 0.4638,
+    "precision": 0.3209,
+    "false_positive_rate": 0.0096
+  },
+  "mean_key_features_by_class": {
+    "legit": {
+      "amount": 2483.7836,
+      "amount_ratio": 1.0139,
+      "transactions_last_2_min": 0.0655,
+      "transactions_last_1_hour": 0.2125
+    },
+    "fraud": {
+      "amount": 5162.0744,
+      "amount_ratio": 1.9682,
+      "transactions_last_2_min": 1.6092,
+      "transactions_last_1_hour": 2.4953
+    }
+  },
+  "generation_runtime_seconds": 65.85,
+  "split_seed_used": 42
+}

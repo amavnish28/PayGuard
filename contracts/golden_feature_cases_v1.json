@@ -1,0 +1,820 @@
+[
+  {
+    "name": "first_transaction",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "1500.00",
+        "device_id": "DEV-1",
+        "location": "Mumbai",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      }
+    ],
+    "target_index": 0,
+    "expected_features": {
+      "amount": 1500.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 0,
+      "account_avg_amount": 0.0,
+      "amount_ratio": 0.0,
+      "time_since_previous_seconds": -1.0,
+      "is_first_transaction": 1,
+      "new_device": 1,
+      "new_location": 1,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "same_device_and_location",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Mumbai",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Mumbai",
+        "timestamp": "2026-06-01T10:10:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 1000.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 1,
+      "account_avg_amount": 1000.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 600.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "new_device_with_history",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Mumbai",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "1000.00",
+        "device_id": "DEV-2",
+        "location": "Mumbai",
+        "timestamp": "2026-06-01T10:10:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 1000.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 1,
+      "account_avg_amount": 1000.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 600.0,
+      "is_first_transaction": 0,
+      "new_device": 1,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 15,
+    "expected_rules": ["NEW_DEVICE"]
+  },
+  {
+    "name": "new_location_with_history",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Mumbai",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:10:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 1000.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 1,
+      "account_avg_amount": 1000.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 600.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 1,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 15,
+    "expected_rules": ["NEW_LOCATION"]
+  },
+  {
+    "name": "velocity_exactly_4_previous_in_2_min",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "500.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "500.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:30+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-103",
+        "amount": "500.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:01:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-104",
+        "amount": "500.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:01:30+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-105",
+        "amount": "500.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:01:50+05:30"
+      }
+    ],
+    "target_index": 4,
+    "expected_features": {
+      "amount": 500.0,
+      "transactions_last_2_min": 4,
+      "transactions_last_1_hour": 4,
+      "account_avg_amount": 500.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 20.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 30,
+    "expected_rules": ["VELOCITY"]
+  },
+  {
+    "name": "velocity_exactly_3_previous_in_2_min",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "500.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:30+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "500.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:01:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-103",
+        "amount": "500.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:01:30+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-104",
+        "amount": "500.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:01:50+05:30"
+      }
+    ],
+    "target_index": 3,
+    "expected_features": {
+      "amount": 500.0,
+      "transactions_last_2_min": 3,
+      "transactions_last_1_hour": 3,
+      "account_avg_amount": 500.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 20.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "boundary_exactly_2_minutes_earlier",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "200.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "200.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:02:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 200.0,
+      "transactions_last_2_min": 1,
+      "transactions_last_1_hour": 1,
+      "account_avg_amount": 200.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 120.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "boundary_exactly_1_hour_earlier",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "300.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "300.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T11:00:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 300.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 1,
+      "account_avg_amount": 300.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 3600.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 11,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "identical_timestamps",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "400.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "400.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 400.0,
+      "transactions_last_2_min": 1,
+      "transactions_last_1_hour": 1,
+      "account_avg_amount": 400.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 0.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "out_of_order_arrival_later_timestamp_excluded",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "500.00",
+        "device_id": "DEV-2",
+        "location": "Jaipur",
+        "timestamp": "2026-06-01T10:15:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-103",
+        "amount": "200.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:05:00+05:30"
+      }
+    ],
+    "target_index": 2,
+    "expected_features": {
+      "amount": 200.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 1,
+      "account_avg_amount": 100.0,
+      "amount_ratio": 2.0,
+      "time_since_previous_seconds": 300.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "tz_utc_18_00_is_kolkata_23_odd",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T12:00:00Z"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T18:00:00Z"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 100.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 0,
+      "account_avg_amount": 100.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 21600.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 23,
+      "odd_hour": 1
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "boundary_hour_22_59_not_odd",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T12:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T22:59:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 100.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 0,
+      "account_avg_amount": 100.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 39540.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 22,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "boundary_hour_23_00_is_odd",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T12:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T23:00:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 100.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 0,
+      "account_avg_amount": 100.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 39600.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 23,
+      "odd_hour": 1
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "boundary_hour_05_59_is_odd",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T12:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-02T05:59:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 100.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 0,
+      "account_avg_amount": 100.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 64740.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 5,
+      "odd_hour": 1
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "boundary_hour_06_00_not_odd",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T12:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "100.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-02T06:00:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 100.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 0,
+      "account_avg_amount": 100.0,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 64800.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 6,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "average_rounding_half_up",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "10.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "10.01",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:10:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-103",
+        "amount": "10.01",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:20:00+05:30"
+      }
+    ],
+    "target_index": 2,
+    "expected_features": {
+      "amount": 10.01,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 2,
+      "account_avg_amount": 10.01,
+      "amount_ratio": 1.0,
+      "time_since_previous_seconds": 600.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 0,
+    "expected_rules": []
+  },
+  {
+    "name": "ratio_cap_at_999999_9999",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "0.01",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "5000000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:10:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 5000000.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 1,
+      "account_avg_amount": 0.01,
+      "amount_ratio": 999999.9999,
+      "time_since_previous_seconds": 600.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 25,
+    "expected_rules": ["HIGH_AMOUNT"]
+  },
+  {
+    "name": "high_amount_ratio_exactly_3_0",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "3000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:10:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 3000.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 1,
+      "account_avg_amount": 1000.0,
+      "amount_ratio": 3.0,
+      "time_since_previous_seconds": 600.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 10,
+      "odd_hour": 0
+    },
+    "expected_rule_score": 25,
+    "expected_rules": ["HIGH_AMOUNT"]
+  },
+  {
+    "name": "odd_hour_high_value_ratio_exactly_2_0",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T10:00:00+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "2000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T23:30:00+05:30"
+      }
+    ],
+    "target_index": 1,
+    "expected_features": {
+      "amount": 2000.0,
+      "transactions_last_2_min": 0,
+      "transactions_last_1_hour": 0,
+      "account_avg_amount": 1000.0,
+      "amount_ratio": 2.0,
+      "time_since_previous_seconds": 48600.0,
+      "is_first_transaction": 0,
+      "new_device": 0,
+      "new_location": 0,
+      "transaction_hour": 23,
+      "odd_hour": 1
+    },
+    "expected_rule_score": 15,
+    "expected_rules": ["ODD_HOUR_HIGH_VALUE"]
+  },
+  {
+    "name": "all_five_rules_triggered_capped_at_100",
+    "transactions": [
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-101",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T23:28:30+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-102",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T23:28:50+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-103",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T23:29:10+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-104",
+        "amount": "1000.00",
+        "device_id": "DEV-1",
+        "location": "Delhi",
+        "timestamp": "2026-06-01T23:29:30+05:30"
+      },
+      {
+        "account_id": "ACC-001",
+        "txn_id": "TXN-105",
+        "amount": "5000.00",
+        "device_id": "DEV-NEW",
+        "location": "Mumbai",
+        "timestamp": "2026-06-01T23:29:50+05:30"
+      }
+    ],
+    "target_index": 4,
+    "expected_features": {
+      "amount": 5000.0,
+      "transactions_last_2_min": 4,
+      "transactions_last_1_hour": 4,
+      "account_avg_amount": 1000.0,
+      "amount_ratio": 5.0,
+      "time_since_previous_seconds": 20.0,
+      "is_first_transaction": 0,
+      "new_device": 1,
+      "new_location": 1,
+      "transaction_hour": 23,
+      "odd_hour": 1
+    },
+    "expected_rule_score": 100,
+    "expected_rules": [
+      "VELOCITY",
+      "HIGH_AMOUNT",
+      "NEW_DEVICE",
+      "NEW_LOCATION",
+      "ODD_HOUR_HIGH_VALUE"
+    ]
+  }
+]
