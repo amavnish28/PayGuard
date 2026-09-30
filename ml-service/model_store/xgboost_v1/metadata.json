@@ -1,0 +1,56 @@
+{
+  "model_version": "xgboost-v1",
+  "trained_at": "2026-09-30T08:46:40.467025+00:00",
+  "feature_order": [
+    "amount",
+    "transactions_last_2_min",
+    "transactions_last_1_hour",
+    "account_avg_amount",
+    "amount_ratio",
+    "time_since_previous_seconds",
+    "is_first_transaction",
+    "new_device",
+    "new_location",
+    "transaction_hour",
+    "odd_hour"
+  ],
+  "feature_schema_version": "1",
+  "block_threshold": 0.56667,
+  "review_threshold": 0.18657,
+  "val_metrics": {
+    "pr_auc": 0.86506,
+    "roc_auc": 0.98641,
+    "brier_score": 0.00239,
+    "block_threshold_metrics": {
+      "precision": 0.91429,
+      "recall": 0.73927,
+      "f1": 0.81752,
+      "false_positive_rate": 0.00063
+    },
+    "review_threshold_metrics": {
+      "precision": 0.71646,
+      "recall": 0.85479,
+      "f1": 0.77953,
+      "false_positive_rate": 0.00305
+    }
+  },
+  "cv_pr_auc_mean": 0.87933,
+  "cv_pr_auc_std": 0.00475,
+  "training_row_counts": {
+    "train": {
+      "total_rows": 312167,
+      "fraud_rows": 3119
+    },
+    "val": {
+      "total_rows": 67804,
+      "fraud_rows": 606
+    },
+    "test": {
+      "total_rows": 67415,
+      "fraud_rows": 622
+    }
+  },
+  "random_seed": 42,
+  "scale_pos_weight_used": 99.0856,
+  "calibration_method_used": "CalibratedClassifierCV(estimator=FrozenEstimator(raw_model), method='isotonic')"
+}

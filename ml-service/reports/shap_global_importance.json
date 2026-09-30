@@ -1,0 +1,13 @@
+{
+  "time_since_previous_seconds": 1.99383,
+  "amount_ratio": 1.83498,
+  "transaction_hour": 1.53911,
+  "amount": 0.6456,
+  "transactions_last_1_hour": 0.61019,
+  "account_avg_amount": 0.58834,
+  "odd_hour": 0.32888,
+  "new_location": 0.18426,
+  "new_device": 0.10324,
+  "transactions_last_2_min": 0.05807,
+  "is_first_transaction": 0.0
+}

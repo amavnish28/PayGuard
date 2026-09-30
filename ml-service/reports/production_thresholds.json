@@ -1,0 +1,35 @@
+{
+  "block_threshold": 0.56667,
+  "review_threshold": 0.18657,
+  "block_metrics": {
+    "threshold": 0.56667,
+    "precision": 0.91429,
+    "recall": 0.73927,
+    "f1": 0.81752,
+    "false_positive_rate": 0.00063,
+    "tp": 448,
+    "fp": 42,
+    "fn": 158,
+    "tn": 67156,
+    "method": "Lowest probability threshold with precision >= 0.90 on VAL"
+  },
+  "review_metrics": {
+    "threshold": 0.18657,
+    "precision": 0.71646,
+    "recall": 0.85479,
+    "f1": 0.77953,
+    "false_positive_rate": 0.00305,
+    "tp": 518,
+    "fp": 205,
+    "fn": 88,
+    "tn": 66993,
+    "method": "Boundary probability threshold with recall >= 0.85 on VAL"
+  },
+  "band_counts": {
+    "approve_below_review": 67081,
+    "review_between_thresholds": 233,
+    "block_above_or_equal_block": 490,
+    "total_val_transactions": 67804
+  },
+  "flags": []
+}

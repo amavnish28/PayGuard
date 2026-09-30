@@ -49,4 +49,8 @@ ml-service/data/*
 !ml-service/data/splits/split_seed42.npz
 ml-service/model_store/*
 !ml-service/model_store/.gitkeep
+!ml-service/model_store/xgboost_v1/
+!ml-service/model_store/xgboost_v1/model.joblib
+!ml-service/model_store/xgboost_v1/explainer.joblib
+!ml-service/model_store/xgboost_v1/metadata.json
 .ipynb_checkpoints/

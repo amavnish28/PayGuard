@@ -1,0 +1,138 @@
+{
+  "account_takeover_fraud": {
+    "account_id": "ACC_000194",
+    "txn_id": "TXN_ACC_000194_FR_3",
+    "scenario": "ACCOUNT_TAKEOVER",
+    "is_fraud": 1,
+    "predicted_probability": 1.0,
+    "top_5_features": [
+      {
+        "feature": "amount_ratio",
+        "feature_value": 6.4323,
+        "shap_value": 3.12551
+      },
+      {
+        "feature": "odd_hour",
+        "feature_value": 1.0,
+        "shap_value": 1.78128
+      },
+      {
+        "feature": "time_since_previous_seconds",
+        "feature_value": 503.0,
+        "shap_value": 1.48934
+      },
+      {
+        "feature": "transaction_hour",
+        "feature_value": 4.0,
+        "shap_value": 0.95206
+      },
+      {
+        "feature": "transactions_last_1_hour",
+        "feature_value": 2.0,
+        "shap_value": 0.73817
+      }
+    ]
+  },
+  "subtle_fraud": {
+    "account_id": "ACC_000665",
+    "txn_id": "TXN_ACC_000665_FR_2",
+    "scenario": "SUBTLE",
+    "is_fraud": 1,
+    "predicted_probability": 0.87879,
+    "top_5_features": [
+      {
+        "feature": "time_since_previous_seconds",
+        "feature_value": 205.0,
+        "shap_value": 1.98769
+      },
+      {
+        "feature": "odd_hour",
+        "feature_value": 1.0,
+        "shap_value": 1.64128
+      },
+      {
+        "feature": "account_avg_amount",
+        "feature_value": 3515.86,
+        "shap_value": -1.19399
+      },
+      {
+        "feature": "transaction_hour",
+        "feature_value": 2.0,
+        "shap_value": 0.64493
+      },
+      {
+        "feature": "amount",
+        "feature_value": 6836.2,
+        "shap_value": 0.5902
+      }
+    ]
+  },
+  "substitute_card_testing_fraud": {
+    "account_id": "ACC_000111",
+    "txn_id": "TXN_ACC_000111_FR_1",
+    "scenario": "CARD_TESTING",
+    "is_fraud": 1,
+    "predicted_probability": 1.0,
+    "top_5_features": [
+      {
+        "feature": "amount_ratio",
+        "feature_value": 0.0181,
+        "shap_value": 3.03411
+      },
+      {
+        "feature": "time_since_previous_seconds",
+        "feature_value": 2040.0,
+        "shap_value": 2.45351
+      },
+      {
+        "feature": "new_device",
+        "feature_value": 1.0,
+        "shap_value": 1.30444
+      },
+      {
+        "feature": "transactions_last_1_hour",
+        "feature_value": 1.0,
+        "shap_value": 0.78194
+      },
+      {
+        "feature": "amount",
+        "feature_value": 20.8,
+        "shap_value": 0.73778
+      }
+    ]
+  },
+  "false_positive_legit": {
+    "account_id": "ACC_000505",
+    "txn_id": "TXN_ACC_000505_0092",
+    "scenario": "LEGIT",
+    "is_fraud": 0,
+    "predicted_probability": 0.99301,
+    "top_5_features": [
+      {
+        "feature": "amount_ratio",
+        "feature_value": 3.9078,
+        "shap_value": 2.71929
+      },
+      {
+        "feature": "odd_hour",
+        "feature_value": 1.0,
+        "shap_value": 1.93198
+      },
+      {
+        "feature": "time_since_previous_seconds",
+        "feature_value": 306.0,
+        "shap_value": 1.50697
+      },
+      {
+        "feature": "amount",
+        "feature_value": 16892.8,
+        "shap_value": 1.22146
+      },
+      {
+        "feature": "transaction_hour",
+        "feature_value": 5.0,
+        "shap_value": 0.94968
+      }
+    ]
+  }
+}

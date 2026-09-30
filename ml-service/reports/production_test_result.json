@@ -1,0 +1,48 @@
+{
+  "evaluated_at": "2026-09-30T08:48:36.341225+00:00",
+  "model_version": "xgboost-v1",
+  "test_rows": 67415,
+  "test_fraud_rows": 622,
+  "pr_auc": 0.84803,
+  "roc_auc": 0.98389,
+  "block_threshold": 0.56667,
+  "review_threshold": 0.18657,
+  "block_metrics": {
+    "threshold": 0.56667,
+    "precision": 0.9126,
+    "recall": 0.72186,
+    "f1": 0.8061,
+    "false_positive_rate": 0.00064,
+    "tp": 449,
+    "fp": 43,
+    "fn": 173,
+    "tn": 66750
+  },
+  "review_metrics": {
+    "threshold": 0.18657,
+    "precision": 0.82295,
+    "recall": 0.80707,
+    "f1": 0.81494,
+    "false_positive_rate": 0.00162,
+    "tp": 502,
+    "fp": 108,
+    "fn": 120,
+    "tn": 66685
+  },
+  "confusion_matrix_at_block": {
+    "tn": 66750,
+    "fp": 43,
+    "fn": 173,
+    "tp": 449,
+    "matrix": [
+      [
+        66750,
+        43
+      ],
+      [
+        173,
+        449
+      ]
+    ]
+  }
+}
