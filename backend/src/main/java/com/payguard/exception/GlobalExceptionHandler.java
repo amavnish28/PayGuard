@@ -55,6 +55,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
+    @ExceptionHandler(VerdictAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleVerdictAlreadyExists(VerdictAlreadyExistsException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "Conflict");
+        body.put("message", ex.getMessage() != null ? ex.getMessage() : "Verdict already exists for this alert");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         Map<String, Object> body = new LinkedHashMap<>();
