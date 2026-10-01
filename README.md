@@ -118,7 +118,7 @@ The database foundation has been implemented and integrity-tested.
 - [x] Machine learning pipeline
 - [x] FastAPI ML service
 - [x] Hybrid fraud decision engine
-- [ ] React dashboard
+- [x] React dashboard
 - [ ] Transaction simulator
 - [ ] Load testing
 - [ ] Dockerized application

@@ -83,4 +83,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
             @Param("accountId") String accountId,
             @Param("currentId") UUID currentId,
             @Param("currentTimestamp") OffsetDateTime currentTimestamp);
+
+    @Query("SELECT COUNT(t) FROM Transaction t WHERE t.createdAt >= :since")
+    long countTransactionsSince(@Param("since") OffsetDateTime since);
 }

@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,4 +56,22 @@ public interface AlertRepository extends JpaRepository<Alert, UUID> {
             @Param("status") AlertStatus status,
             @Param("decision") Decision decision,
             Pageable pageable);
+
+    @Query("SELECT a.decision, COUNT(a) FROM Alert a GROUP BY a.decision")
+    List<Object[]> countByDecisionGroup();
+
+    @Query("SELECT a.status, COUNT(a) FROM Alert a GROUP BY a.status")
+    List<Object[]> countByStatusGroup();
+
+    @Query("SELECT a.severity, COUNT(a) FROM Alert a GROUP BY a.severity")
+    List<Object[]> countBySeverityGroup();
+
+    @Query("SELECT COUNT(a) FROM Alert a WHERE a.createdAt >= :since")
+    long countAlertsSince(@Param("since") OffsetDateTime since);
+
+    @Query("SELECT a.decision, COUNT(a) FROM Alert a WHERE a.createdAt >= :since GROUP BY a.decision")
+    List<Object[]> countAlertsSinceGroupedByDecision(@Param("since") OffsetDateTime since);
+
+    @Query(value = "SELECT COUNT(*) FROM alerts WHERE created_at >= :since AND explanation IS NOT NULL AND explanation->>'mlAvailable' = 'true'", nativeQuery = true)
+    long countMlAvailableSince(@Param("since") OffsetDateTime since);
 }

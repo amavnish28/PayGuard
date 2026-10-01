@@ -37,16 +37,18 @@ export const DashboardLayout: React.FC = () => {
 
         <nav style={{ padding: '16px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <NavLink
+            to="/overview"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <span>Overview</span>
+          </NavLink>
+
+          <NavLink
             to="/alerts"
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
             <span>Alerts</span>
           </NavLink>
-
-          <div className="nav-link disabled" title="Coming soon">
-            <span>Overview</span>
-            <span className="badge-tag">Soon</span>
-          </div>
 
           <div className="nav-link disabled" title="Coming soon">
             <span>Transactions</span>
