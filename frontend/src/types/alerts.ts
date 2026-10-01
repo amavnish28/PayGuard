@@ -33,6 +33,14 @@ export interface AlertExplanation {
   fraudProbability: number | null;
 }
 
+export interface AlertVerdictSummary {
+  id: string;
+  verdict: 'FRAUD' | 'LEGITIMATE';
+  comment: string | null;
+  analystUsername: string;
+  createdAt: string;
+}
+
 export interface AlertDetail extends AlertSummary {
   finalScore: number | null;
   explanation: AlertExplanation;
@@ -43,6 +51,7 @@ export interface AlertDetail extends AlertSummary {
   location: string;
   merchantType: string;
   transactionTimestamp: string; // ISO-8601
+  verdict?: AlertVerdictSummary | null;
 }
 
 export interface PageResponse<T> {

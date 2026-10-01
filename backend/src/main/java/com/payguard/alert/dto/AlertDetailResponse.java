@@ -20,6 +20,7 @@ public class AlertDetailResponse extends AlertSummaryResponse {
     private String location;
     private String merchantType;
     private OffsetDateTime transactionTimestamp;
+    private AlertVerdictSummary verdict;
 
     public AlertDetailResponse() {
     }
@@ -29,6 +30,17 @@ public class AlertDetailResponse extends AlertSummaryResponse {
                                OffsetDateTime createdAt, BigDecimal finalScore, Map<String, Object> explanation,
                                OffsetDateTime updatedAt, BigDecimal amount, String currency, String deviceId,
                                String location, String merchantType, OffsetDateTime transactionTimestamp) {
+        this(id, transactionId, decision, severity, status, fraudProbability, ruleScore, createdAt,
+                finalScore, explanation, updatedAt, amount, currency, deviceId, location, merchantType,
+                transactionTimestamp, null);
+    }
+
+    public AlertDetailResponse(UUID id, String transactionId, Decision decision, SeverityLevel severity,
+                               AlertStatus status, BigDecimal fraudProbability, BigDecimal ruleScore,
+                               OffsetDateTime createdAt, BigDecimal finalScore, Map<String, Object> explanation,
+                               OffsetDateTime updatedAt, BigDecimal amount, String currency, String deviceId,
+                               String location, String merchantType, OffsetDateTime transactionTimestamp,
+                               AlertVerdictSummary verdict) {
         super(id, transactionId, decision, severity, status, fraudProbability, ruleScore, createdAt);
         this.finalScore = finalScore;
         this.explanation = explanation;
@@ -39,6 +51,7 @@ public class AlertDetailResponse extends AlertSummaryResponse {
         this.location = location;
         this.merchantType = merchantType;
         this.transactionTimestamp = transactionTimestamp;
+        this.verdict = verdict;
     }
 
     public BigDecimal getFinalScore() {
@@ -111,5 +124,13 @@ public class AlertDetailResponse extends AlertSummaryResponse {
 
     public void setTransactionTimestamp(OffsetDateTime transactionTimestamp) {
         this.transactionTimestamp = transactionTimestamp;
+    }
+
+    public AlertVerdictSummary getVerdict() {
+        return verdict;
+    }
+
+    public void setVerdict(AlertVerdictSummary verdict) {
+        this.verdict = verdict;
     }
 }

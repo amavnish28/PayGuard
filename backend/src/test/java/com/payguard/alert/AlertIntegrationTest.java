@@ -50,6 +50,12 @@ class AlertIntegrationTest {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Autowired
+    private com.payguard.verdict.AnalystVerdictRepository analystVerdictRepository;
+
+    @Autowired
+    private com.payguard.user.UserRepository userRepository;
+
     private String analystJwtToken;
     private String adminJwtToken;
     private Alert openReviewAlert;
@@ -215,7 +221,38 @@ class AlertIntegrationTest {
                 .andExpect(jsonPath("$.merchantType").value("electronics"))
                 .andExpect(jsonPath("$.transactionTimestamp").isNotEmpty())
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty())
+                .andExpect(jsonPath("$.verdict").value(org.hamcrest.Matchers.nullValue()));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/alerts/{id} returns populated verdict field when alert has an existing verdict")
+    void testGetAlertByIdWithExistingVerdict() throws Exception {
+        User analyst = new User();
+        analyst.setUsername("test_verdict_author_" + UUID.randomUUID().toString().substring(0, 8));
+        analyst.setEmail(analyst.getUsername() + "@payguard.com");
+        analyst.setPasswordHash("hashed_password");
+        analyst.setRole(UserRole.ANALYST);
+        analyst.setIsActive(true);
+        analyst = userRepository.saveAndFlush(analyst);
+
+        com.payguard.verdict.AnalystVerdict verdict = new com.payguard.verdict.AnalystVerdict();
+        verdict.setAlertId(openReviewAlert.getId());
+        verdict.setAnalystId(analyst.getId());
+        verdict.setVerdict(com.payguard.verdict.VerdictType.FRAUD);
+        verdict.setComment("Verified malicious transaction pattern");
+        verdict.setCreatedAt(OffsetDateTime.now());
+        analystVerdictRepository.saveAndFlush(verdict);
+
+        mockMvc.perform(get("/api/v1/alerts/" + openReviewAlert.getId())
+                        .header("Authorization", "Bearer " + analystJwtToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(openReviewAlert.getId().toString()))
+                .andExpect(jsonPath("$.verdict").isMap())
+                .andExpect(jsonPath("$.verdict.verdict").value("FRAUD"))
+                .andExpect(jsonPath("$.verdict.comment").value("Verified malicious transaction pattern"))
+                .andExpect(jsonPath("$.verdict.analystUsername").value(analyst.getUsername()))
+                .andExpect(jsonPath("$.verdict.createdAt").isNotEmpty());
     }
 
     @Test

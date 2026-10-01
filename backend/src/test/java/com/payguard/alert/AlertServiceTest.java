@@ -40,6 +40,12 @@ class AlertServiceTest {
     @Mock
     private TransactionRepository transactionRepository;
 
+    @Mock
+    private com.payguard.verdict.AnalystVerdictRepository analystVerdictRepository;
+
+    @Mock
+    private com.payguard.user.UserRepository userRepository;
+
     @InjectMocks
     private AlertService alertService;
 
@@ -154,6 +160,37 @@ class AlertServiceTest {
         assertEquals("device-1", detail.getDeviceId());
         assertEquals("Bangalore", detail.getLocation());
         assertEquals("grocery", detail.getMerchantType());
+        assertNull(detail.getVerdict());
+    }
+
+    @Test
+    @DisplayName("getAlertById returns populated AlertVerdictSummary when verdict exists")
+    void testGetAlertByIdWithVerdict() {
+        when(alertRepository.findById(alertId)).thenReturn(Optional.of(sampleAlert));
+        when(transactionRepository.findById(txnUuid)).thenReturn(Optional.of(sampleTxn));
+
+        UUID verdictId = UUID.randomUUID();
+        UUID analystId = UUID.randomUUID();
+        com.payguard.verdict.AnalystVerdict verdict = new com.payguard.verdict.AnalystVerdict(
+                verdictId, alertId, analystId, com.payguard.verdict.VerdictType.FRAUD,
+                "Confirmed fraudulent pattern", OffsetDateTime.now()
+        );
+        com.payguard.user.User analystUser = new com.payguard.user.User();
+        analystUser.setId(analystId);
+        analystUser.setUsername("senior_analyst");
+
+        when(analystVerdictRepository.findByAlertId(alertId)).thenReturn(Optional.of(verdict));
+        when(userRepository.findById(analystId)).thenReturn(Optional.of(analystUser));
+
+        AlertDetailResponse detail = alertService.getAlertById(alertId);
+
+        assertNotNull(detail);
+        assertNotNull(detail.getVerdict());
+        assertEquals(verdictId, detail.getVerdict().getId());
+        assertEquals(com.payguard.verdict.VerdictType.FRAUD, detail.getVerdict().getVerdict());
+        assertEquals("Confirmed fraudulent pattern", detail.getVerdict().getComment());
+        assertEquals("senior_analyst", detail.getVerdict().getAnalystUsername());
+        assertNotNull(detail.getVerdict().getCreatedAt());
     }
 
     @Test

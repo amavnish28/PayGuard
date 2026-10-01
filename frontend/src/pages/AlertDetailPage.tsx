@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { getAlertDetail } from '../api/alerts';
+import { submitVerdict } from '../api/verdict';
 import type { AlertDecision, AlertStatus } from '../types/alerts';
+import type { VerdictType } from '../types/verdict';
 
 export const AlertDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+
+  const [comment, setComment] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [lastVerdict, setLastVerdict] = useState<VerdictType | null>(null);
 
   const {
     data: alert,
@@ -18,6 +26,33 @@ export const AlertDetailPage: React.FC = () => {
     queryKey: ['alert', id],
     queryFn: () => getAlertDetail(id!),
     enabled: !!id,
+  });
+
+  const verdictMutation = useMutation({
+    mutationFn: (verdictType: VerdictType) => {
+      const trimmedComment = comment.trim();
+      return submitVerdict(id!, {
+        verdict: verdictType,
+        comment: trimmedComment.length > 0 ? trimmedComment : undefined,
+      });
+    },
+    onSuccess: () => {
+      setErrorMessage(null);
+      setConflictMessage(null);
+      setComment('');
+      queryClient.invalidateQueries({ queryKey: ['alert', id] });
+    },
+    onError: (err: unknown) => {
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        setConflictMessage('This alert already has a verdict');
+        setErrorMessage(null);
+        queryClient.invalidateQueries({ queryKey: ['alert', id] });
+      } else {
+        const msg = err instanceof Error ? err.message : 'Failed to submit verdict. Please try again.';
+        setErrorMessage(msg);
+        setConflictMessage(null);
+      }
+    },
   });
 
   const getDecisionBadgeClass = (d: AlertDecision) => {
@@ -357,6 +392,200 @@ export const AlertDetailPage: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Analyst Verdict Card */}
+          <div className="card">
+            <h2 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '16px', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              Analyst Verdict
+            </h2>
+
+            {alert.verdict ? (
+              /* CASE A: Verdict is already populated */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.875rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Verdict</span>
+                  <span>
+                    {alert.verdict.verdict === 'FRAUD' ? (
+                      <span className="badge badge-block" style={{ fontSize: '0.75rem', fontWeight: '700' }}>
+                        FRAUD
+                      </span>
+                    ) : (
+                      <span className="badge badge-approve" style={{ fontSize: '0.75rem', fontWeight: '700' }}>
+                        LEGITIMATE
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Submitted By</span>
+                  <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                    {alert.verdict.analystUsername}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Timestamp</span>
+                  <span className="monospace" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                    {formatDate(alert.verdict.createdAt)}
+                  </span>
+                </div>
+
+                <div style={{ marginTop: '4px' }}>
+                  <span style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                    Investigation Notes:
+                  </span>
+                  <div style={{
+                    padding: '12px',
+                    backgroundColor: 'var(--bg-app)',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    color: alert.verdict.comment ? 'var(--text-primary)' : 'var(--text-muted)',
+                    fontStyle: alert.verdict.comment ? 'normal' : 'italic',
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: '1.4',
+                  }}>
+                    {alert.verdict.comment && alert.verdict.comment.trim().length > 0
+                      ? alert.verdict.comment
+                      : 'No comment provided'}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* CASE B: No verdict yet */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {conflictMessage && (
+                  <div className="error-banner" style={{ fontSize: '0.875rem' }}>
+                    <span>{conflictMessage}</span>
+                  </div>
+                )}
+
+                {errorMessage && (
+                  <div className="error-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
+                    <div>
+                      <strong>Error:</strong> {errorMessage}
+                    </div>
+                    {lastVerdict && (
+                      <button
+                        type="button"
+                        onClick={() => verdictMutation.mutate(lastVerdict)}
+                        className="btn btn-secondary btn-sm"
+                        disabled={verdictMutation.isPending}
+                      >
+                        Retry
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <label
+                    htmlFor="verdict-notes"
+                    style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: 'var(--text-secondary)', marginBottom: '6px' }}
+                  >
+                    Investigation Notes (optional)
+                  </label>
+                  <textarea
+                    id="verdict-notes"
+                    value={comment}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 2000) {
+                        setComment(e.target.value);
+                      }
+                    }}
+                    placeholder="Add investigation notes (optional)"
+                    rows={4}
+                    disabled={verdictMutation.isPending}
+                    style={{
+                      width: '100%',
+                      resize: 'vertical',
+                      padding: '10px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: 'var(--bg-app)',
+                      color: 'var(--text-primary)',
+                      fontFamily: 'inherit',
+                      fontSize: '0.875rem',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    fontSize: '0.75rem',
+                    color: comment.length >= 2000 ? 'var(--color-red-text)' : 'var(--text-muted)',
+                    marginTop: '4px',
+                  }}>
+                    {comment.length} / 2000 characters
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLastVerdict('FRAUD');
+                      verdictMutation.mutate('FRAUD');
+                    }}
+                    disabled={verdictMutation.isPending}
+                    className="btn"
+                    style={{
+                      flex: 1,
+                      minWidth: '140px',
+                      backgroundColor: '#dc2626',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '10px 16px',
+                      borderRadius: '6px',
+                      fontWeight: '600',
+                      cursor: verdictMutation.isPending ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      opacity: verdictMutation.isPending ? 0.6 : 1,
+                    }}
+                  >
+                    {verdictMutation.isPending && lastVerdict === 'FRAUD' && (
+                      <span className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />
+                    )}
+                    Mark as FRAUD
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLastVerdict('LEGITIMATE');
+                      verdictMutation.mutate('LEGITIMATE');
+                    }}
+                    disabled={verdictMutation.isPending}
+                    className="btn"
+                    style={{
+                      flex: 1,
+                      minWidth: '140px',
+                      backgroundColor: '#16a34a',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '10px 16px',
+                      borderRadius: '6px',
+                      fontWeight: '600',
+                      cursor: verdictMutation.isPending ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      opacity: verdictMutation.isPending ? 0.6 : 1,
+                    }}
+                  >
+                    {verdictMutation.isPending && lastVerdict === 'LEGITIMATE' && (
+                      <span className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />
+                    )}
+                    Mark as LEGITIMATE
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
