@@ -111,13 +111,13 @@ The database foundation has been implemented and integrity-tested.
 - [x] Database indexes
 - [x] Database integrity testing
 - [x] Initial Git repository
-- [ ] Spring Boot backend
-- [ ] JWT authentication
-- [ ] Transaction API
-- [ ] Rule engine
-- [ ] Machine learning pipeline
-- [ ] FastAPI ML service
-- [ ] Hybrid fraud decision engine
+- [x] Spring Boot backend
+- [x] JWT authentication
+- [x] Transaction API
+- [x] Rule engine
+- [x] Machine learning pipeline
+- [x] FastAPI ML service
+- [x] Hybrid fraud decision engine
 - [ ] React dashboard
 - [ ] Transaction simulator
 - [ ] Load testing

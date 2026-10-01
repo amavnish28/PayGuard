@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -37,10 +39,20 @@ public class AuthController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return ResponseEntity.ok(Map.of(
-                "username", authentication.getName(),
-                "authorities", authentication.getAuthorities()
-        ));
+
+        String rawRole = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(auth -> auth.startsWith("ROLE_"))
+                .map(auth -> auth.substring(5))
+                .findFirst()
+                .orElse(null);
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("username", authentication.getName());
+        body.put("role", rawRole);
+        body.put("authorities", authentication.getAuthorities());
+
+        return ResponseEntity.ok(body);
     }
 
     @ExceptionHandler(BadCredentialsException.class)

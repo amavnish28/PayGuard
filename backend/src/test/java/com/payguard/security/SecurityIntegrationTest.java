@@ -117,7 +117,61 @@ class SecurityIntegrationTest {
         mockMvc.perform(get("/api/auth/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("alice"));
+                .andExpect(jsonPath("$.username").value("alice"))
+                .andExpect(jsonPath("$.role").value("ANALYST"))
+                .andExpect(jsonPath("$.authorities[0].authority").value("ROLE_ANALYST"));
+    }
+
+    @Test
+    @DisplayName("GET /api/auth/me returns ADMIN role for authenticated admin user")
+    void testAuthenticatedAdminRequestReturnsAdminRole() throws Exception {
+        User adminUser = new User();
+        adminUser.setId(UUID.randomUUID());
+        adminUser.setUsername("admin");
+        adminUser.setEmail("admin@payguard.com");
+        adminUser.setRole(UserRole.ADMIN);
+        adminUser.setIsActive(true);
+
+        String adminToken = jwtService.generateToken(adminUser);
+
+        mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("admin"))
+                .andExpect(jsonPath("$.role").value("ADMIN"))
+                .andExpect(jsonPath("$.authorities[0].authority").value("ROLE_ADMIN"));
+    }
+
+    @Test
+    @DisplayName("PreAuthorize rejects request with valid JWT having non-permitted role (VIEWER) with 403 Forbidden")
+    void testPreAuthorizeRejectsThirdPartyRoleWith403() throws Exception {
+        // Valid JWT signed by system, but with invented third role VIEWER
+        String viewerToken = jwtService.generateToken("charlie", "VIEWER");
+
+        // Transaction endpoint requires hasAnyRole('ANALYST','ADMIN')
+        String validTxnJson = """
+            {
+                "transactionId": "TXN-TEST-SEC-1",
+                "accountId": "ACC-TEST-1",
+                "amount": 100.00,
+                "currency": "INR",
+                "deviceId": "dev-sec-1",
+                "location": "Mumbai",
+                "merchantType": "retail",
+                "transactionTimestamp": "2026-10-01T12:00:00Z"
+            }
+        """;
+
+        mockMvc.perform(post("/api/transactions")
+                        .header("Authorization", "Bearer " + viewerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validTxnJson))
+                .andExpect(status().isForbidden());
+
+        // Alerts endpoint requires hasAnyRole('ANALYST','ADMIN')
+        mockMvc.perform(get("/api/v1/alerts")
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isForbidden());
     }
 
     @Test
