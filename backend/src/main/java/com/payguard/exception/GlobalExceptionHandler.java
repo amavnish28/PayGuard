@@ -1,5 +1,6 @@
 package com.payguard.exception;
 
+import com.payguard.retraining.RetrainingIneligibleException;
 import com.payguard.transaction.DuplicateTransactionException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -93,5 +94,13 @@ public class GlobalExceptionHandler {
         body.put("error", "Unauthorized");
         body.put("message", ex.getMessage() != null ? ex.getMessage() : "Authentication failed");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    @ExceptionHandler(RetrainingIneligibleException.class)
+    public ResponseEntity<Map<String, Object>> handleRetrainingIneligible(RetrainingIneligibleException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "Bad Request");
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 }

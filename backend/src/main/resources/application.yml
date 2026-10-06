@@ -31,6 +31,14 @@ payguard:
     sliding-window-size: 10
     wait-duration-in-open-state-seconds: 10
     minimum-number-of-calls: 5
+  retraining:
+    min-total-verdicts: 20
+    min-per-class: 5
+    # Sign convention: candidate is acceptable if candidate_pr_auc >= active_pr_auc + min-pr-auc-improvement-tolerance.
+    # With tolerance = -0.02, candidate is acceptable if its PR-AUC is at least (active_pr_auc - 0.02),
+    # meaning candidate PR-AUC may be up to 0.02 WORSE than active PR-AUC and still pass the activation gate.
+    min-pr-auc-improvement-tolerance: -0.02
+    timeout-ms: 120000
 
 resilience4j:
   circuitbreaker:

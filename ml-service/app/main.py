@@ -14,6 +14,7 @@ import joblib
 
 from app.api.health import router as health_router
 from app.api.predict import router as predict_router
+from app.api.retrain import router as retrain_router
 from app.services.predictor import Predictor
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -140,6 +141,7 @@ def create_app(load_on_startup: bool = True) -> FastAPI:
     # Register routers
     app.include_router(health_router)
     app.include_router(predict_router)
+    app.include_router(retrain_router)
 
     return app
 

@@ -191,3 +191,31 @@ At the conclusion of each simulation run, results are output to the terminal and
 - `ml_availability_rate`: Fraction of responses where the ML service successfully returned predictions.
 - `wall_clock_duration_seconds`: Real time taken to execute the simulation.
 - `simulated_time_range`: Span of virtual time covered by the generated transactions.
+
+---
+
+## 6. Seeding Retraining Data
+
+To generate ground-truth analyst verdicts from simulated traffic for model retraining, use the two-step flow:
+
+### Step 1: Run Simulator with Transaction Export
+Run the simulator with `--export-txns` to generate transactions and save payloads to `last_run_transactions.json`:
+```bash
+python simulator.py --count 300 --accounts 15 --fraud-rate 0.03 --seed 42 --export-txns
+```
+
+### Step 2: Seed Analyst Verdicts
+Run `seed_verdicts.py` to match generated alerts to their simulated ground truth scenarios and submit analyst verdicts:
+```bash
+python seed_verdicts.py --txns-file last_run_transactions.json
+```
+
+The script:
+1. Authenticates against PayGuard using credentials in `.env` (or `--username`/`--password`).
+2. Fetches alerts from `GET /api/v1/alerts`.
+3. Skips already verdicted alerts (`alert.verdict != null`).
+4. Submits verdicts via `POST /api/v1/alerts/{id}/verdict`:
+   - `FRAUD` for simulated fraud scenarios (`ACCOUNT_TAKEOVER`, `CARD_TESTING`, `ODD_HOUR_TRANSFER`, `SUBTLE`, `STEALTH`).
+   - `LEGITIMATE` for `LEGIT` transactions.
+5. Prints a summary of inspected alerts, submitted verdicts, and reports whether the cumulative database totals satisfy the retraining eligibility gate (`min-total-verdicts >= 20`, `min-per-class >= 5`).
+

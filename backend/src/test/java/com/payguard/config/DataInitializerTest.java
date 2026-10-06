@@ -25,8 +25,16 @@ class DataInitializerTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private com.payguard.retraining.ModelVersionRepository modelVersionRepository;
+
     @InjectMocks
     private DataInitializer dataInitializer;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        org.mockito.Mockito.lenient().when(modelVersionRepository.count()).thenReturn(1L);
+    }
 
     @Test
     @DisplayName("Creates admin user when env vars are present and repository is empty")
