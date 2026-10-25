@@ -3,18 +3,20 @@
 seed_verdicts.py - Standalone analyst verdict seeding script for PayGuard.
 
 Reads exported transactions from a simulator run (e.g. simulator/last_run_transactions.json),
-queries alerts from the Spring Boot backend, matches alerts to the simulated transaction scenarios,
-and submits deterministic verdicts (FRAUD for fraud scenarios, LEGITIMATE for LEGIT)
+queries alerts from the Spring Boot backend, matches alerts to the simulated transaction scenarios
+using ground truth, and submits deterministic verdicts (FRAUD for fraud scenarios, LEGITIMATE for LEGIT)
 via POST /api/v1/alerts/{id}/verdict.
 
 Usage:
-    python seed_verdicts.py [--txns-file last_run_transactions.json] [--api-url http://localhost:8080]
+    python seed_verdicts.py [--txns-file last_run_transactions.json] [--api-url http://localhost:8080] [--dry-run]
+    python seed_verdicts.py --confirm
 """
 
 import argparse
 import json
 import logging
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -131,50 +133,221 @@ def submit_verdict(session: requests.Session, base_url: str, headers: Dict[str, 
         return False
 
 
-def normalize_iso_timestamp(ts: Optional[str]) -> str:
-    """Normalize timestamp string to second precision for robust index matching."""
-    if not ts:
-        return ""
-    try:
-        dt = datetime.fromisoformat(ts)
-        return dt.strftime("%Y-%m-%dT%H:%M:%S")
-    except Exception:
-        return ts[:19]
+def parse_transaction_id(tx_id: Optional[str]) -> Optional[Tuple[str, int]]:
+    """Parse accountId and seq from SIM-<run>-<account>-<seq>.
+
+    Example:
+        'SIM-6adb3870-SIM-ACC-0006-000212' -> ('SIM-ACC-0006', 212)
+    """
+    if not tx_id or not isinstance(tx_id, str):
+        return None
+
+    # Matches SIM-<run>-(SIM-ACC-\d+)-(\d+)
+    m = re.match(r"^SIM-[^-]+-(SIM-ACC-\d+)-(\d+)$", tx_id)
+    if m:
+        return m.group(1), int(m.group(2))
+
+    # General fallback for arbitrary account formats: SIM-<run>-<account>-<seq>
+    parts = tx_id.split("-")
+    if len(parts) >= 4 and parts[0] == "SIM" and parts[-1].isdigit():
+        seq = int(parts[-1])
+        account_id = "-".join(parts[2:-1])
+        return account_id, seq
+
+    return None
 
 
-def build_txn_indexes(transactions: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, Any]], Dict[Tuple[str, float], Dict[str, Any]]]:
-    """Index simulated transactions by transactionId and (timestamp, amount)."""
-    by_id: Dict[str, Dict[str, Any]] = {}
-    by_ts_amt: Dict[Tuple[str, float], Dict[str, Any]] = {}
-
+def build_txn_log_index(transactions: List[Dict[str, Any]]) -> Dict[Tuple[str, int], Dict[str, Any]]:
+    """Index transactions log by (accountId, seq)."""
+    index: Dict[Tuple[str, int], Dict[str, Any]] = {}
     for tx in transactions:
-        tx_id = tx.get("transactionId")
-        if tx_id:
-            by_id[tx_id] = tx
-
-        ts = normalize_iso_timestamp(tx.get("transactionTimestamp"))
-        amt = round(float(tx.get("amount", 0.0)), 2)
-        if ts:
-            by_ts_amt[(ts, amt)] = tx
-
-    return by_id, by_ts_amt
+        acc_id = tx.get("accountId")
+        seq = tx.get("seq")
+        if acc_id is not None and seq is not None:
+            try:
+                index[(str(acc_id), int(seq))] = tx
+            except (ValueError, TypeError):
+                continue
+    return index
 
 
-def match_scenario(alert_detail: Dict[str, Any], by_id: Dict[str, Dict[str, Any]], by_ts_amt: Dict[Tuple[str, float], Dict[str, Any]]) -> str:
-    """Match alert detail to simulated transaction scenario."""
+def match_alert_to_log(
+    alert_detail: Dict[str, Any],
+    log_index: Dict[Tuple[str, int], Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """Match alert detail to its log entry exactly using parsed accountId, seq, and amount.
+
+    Returns the matching log entry or None if no match.
+    Never falls back to alert decision, severity, or score.
+    """
     tx_id = alert_detail.get("transactionId")
-    if tx_id and tx_id in by_id:
-        return by_id[tx_id].get("scenario", "UNKNOWN")
+    parsed = parse_transaction_id(tx_id)
+    if not parsed:
+        return None
 
-    ts = normalize_iso_timestamp(alert_detail.get("transactionTimestamp"))
-    amt = round(float(alert_detail.get("amount", 0.0)), 2)
-    key = (ts, amt)
-    if key in by_ts_amt:
-        return by_ts_amt[key].get("scenario", "UNKNOWN")
+    account_id, seq = parsed
+    log_entry = log_index.get((account_id, seq))
+    if not log_entry:
+        return None
 
-    # Fallback heuristic: If decision is BLOCK, assume fraud scenario; if REVIEW without match, default to LEGIT
-    decision = alert_detail.get("decision", "REVIEW")
-    return "FRAUD_HEURISTIC" if decision == "BLOCK" else "LEGIT"
+    # Confirm amount equals (within 0.01 tolerance for floating point representation)
+    alert_amount = alert_detail.get("amount")
+    log_amount = log_entry.get("amount")
+    if alert_amount is None or log_amount is None:
+        return None
+
+    try:
+        if abs(float(alert_amount) - float(log_amount)) > 0.01:
+            return None
+    except (ValueError, TypeError):
+        return None
+
+    return log_entry
+
+
+def get_verdict_label(scenario: str) -> str:
+    """Label ONLY from the log's scenario field: LEGIT -> LEGITIMATE, anything else -> FRAUD."""
+    return "LEGITIMATE" if scenario == "LEGIT" else "FRAUD"
+
+
+def format_verdict_comment(scenario: str) -> str:
+    """Format verdict comment exactly as specified."""
+    return f"Auto-verdict from simulator ground truth (scenario: {scenario}) - verification tool only, not a real analyst judgment."
+
+
+def validate_legit_count_against_report(report_path: Path, legit_alerts_count: int) -> bool:
+    """Validate that the number of LEGIT-scenario alerts matches the report's flagged_review_or_block."""
+    if not report_path.exists():
+        logger.error(f"Simulator report file not found at '{report_path}'. Refusing to proceed with --confirm.")
+        return False
+    try:
+        with open(report_path, "r", encoding="utf-8") as f:
+            report_data = json.load(f)
+        expected_legit = (
+            report_data.get("scenario_breakdown", {})
+            .get("LEGIT", {})
+            .get("flagged_review_or_block")
+        )
+        if expected_legit is None:
+            logger.error(f"Could not find scenario_breakdown.LEGIT.flagged_review_or_block in '{report_path}'.")
+            return False
+        if legit_alerts_count != expected_legit:
+            logger.error(
+                f"Validation failed: Number of LEGIT-scenario alerts ({legit_alerts_count}) "
+                f"differs from simulator report ({expected_legit}). Refusing to proceed."
+            )
+            return False
+        logger.info(
+            f"Validation passed: LEGIT-scenario alert count ({legit_alerts_count}) "
+            f"matches simulator report ({expected_legit})."
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Error reading simulator report '{report_path}': {e}. Refusing to proceed.")
+        return False
+
+
+def print_scenario_tables(
+    scenario_x_label: Dict[str, Dict[str, int]],
+    scenario_x_decision: Dict[str, Dict[str, int]],
+    unmatched_count: int,
+) -> None:
+    """Print scenario x label table, scenario x decision table, and unmatched count."""
+    print()
+    print("=" * 65)
+    print("SCENARIO x LABEL")
+    print("=" * 65)
+    print(f"{'Scenario':<25} {'FRAUD':>10} {'LEGITIMATE':>12} {'Total':>8}")
+    print("-" * 65)
+    tot_fraud = 0
+    tot_legit = 0
+    tot_all = 0
+    for scenario in sorted(scenario_x_label.keys()):
+        f_count = scenario_x_label[scenario].get("FRAUD", 0)
+        l_count = scenario_x_label[scenario].get("LEGITIMATE", 0)
+        s_total = f_count + l_count
+        tot_fraud += f_count
+        tot_legit += l_count
+        tot_all += s_total
+        print(f"{scenario:<25} {f_count:>10} {l_count:>12} {s_total:>8}")
+    print("-" * 65)
+    print(f"{'TOTAL':<25} {tot_fraud:>10} {tot_legit:>12} {tot_all:>8}")
+    print()
+
+    print("=" * 65)
+    print("SCENARIO x ALERT DECISION")
+    print("=" * 65)
+    print(f"{'Scenario':<25} {'BLOCK':>10} {'REVIEW':>10} {'Total':>8}")
+    print("-" * 65)
+    tot_block = 0
+    tot_review = 0
+    tot_dec_all = 0
+    for scenario in sorted(scenario_x_decision.keys()):
+        b_count = scenario_x_decision[scenario].get("BLOCK", 0)
+        r_count = scenario_x_decision[scenario].get("REVIEW", 0)
+        s_total = b_count + r_count
+        tot_block += b_count
+        tot_review += r_count
+        tot_dec_all += s_total
+        print(f"{scenario:<25} {b_count:>10} {r_count:>10} {s_total:>8}")
+    print("-" * 65)
+    print(f"{'TOTAL':<25} {tot_block:>10} {tot_review:>10} {tot_dec_all:>8}")
+    print()
+    print(f"UNMATCHED ALERTS: {unmatched_count}")
+    print("=" * 65)
+
+
+def process_alerts(
+    alert_details: List[Dict[str, Any]],
+    log_index: Dict[Tuple[str, int], Dict[str, Any]],
+) -> Tuple[List[Dict[str, Any]], int, Dict[str, Dict[str, int]], Dict[str, Dict[str, int]]]:
+    """Match a collection of alert details to log entries and compute tables.
+
+    Returns:
+        matched_verdicts: list of dicts with alert_id, verdict, comment, scenario, decision, detail
+        unmatched_count: count of alerts that could not be matched
+        scenario_x_label: nested counts of scenario -> label -> count
+        scenario_x_decision: nested counts of scenario -> decision -> count
+    """
+    matched_verdicts: List[Dict[str, Any]] = []
+    unmatched_count = 0
+    scenario_x_label: Dict[str, Dict[str, int]] = {}
+    scenario_x_decision: Dict[str, Dict[str, int]] = {}
+
+    for detail in alert_details:
+        alert_id = detail.get("id")
+        log_entry = match_alert_to_log(detail, log_index)
+        if not log_entry:
+            unmatched_count += 1
+            tx_id = detail.get("transactionId")
+            logger.warning(f"Unmatched alert {alert_id} (transactionId={tx_id}): skipped.")
+            continue
+
+        scenario = log_entry.get("scenario", "UNKNOWN")
+        verdict = get_verdict_label(scenario)
+        comment = format_verdict_comment(scenario)
+        decision = detail.get("decision", "UNKNOWN")
+
+        if scenario not in scenario_x_label:
+            scenario_x_label[scenario] = {"FRAUD": 0, "LEGITIMATE": 0}
+        scenario_x_label[scenario][verdict] = scenario_x_label[scenario].get(verdict, 0) + 1
+
+        if scenario not in scenario_x_decision:
+            scenario_x_decision[scenario] = {}
+        scenario_x_decision[scenario][decision] = scenario_x_decision[scenario].get(decision, 0) + 1
+
+        matched_verdicts.append(
+            {
+                "alert_id": alert_id,
+                "verdict": verdict,
+                "comment": comment,
+                "scenario": scenario,
+                "decision": decision,
+                "detail": detail,
+            }
+        )
+
+    return matched_verdicts, unmatched_count, scenario_x_label, scenario_x_decision
 
 
 def main() -> None:
@@ -186,6 +359,24 @@ def main() -> None:
         help="Path to exported transactions JSON file (default: last_run_transactions.json)",
     )
     parser.add_argument(
+        "--report-file",
+        type=str,
+        default="last_run_report.json",
+        help="Path to simulator report JSON file (default: last_run_report.json)",
+    )
+    parser.add_argument(
+        "--confirm",
+        action="store_true",
+        default=False,
+        help="Execute real verdict submission against backend (default: False; requires --confirm)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="Run in dry-run mode without submitting any verdicts (default ON unless --confirm is passed)",
+    )
+    parser.add_argument(
         "--api-url",
         type=str,
         default=None,
@@ -195,17 +386,19 @@ def main() -> None:
         "--username",
         type=str,
         default=None,
-        help="Analyst/Admin username (default: from .env or analyst)",
+        help="Analyst/Admin username (default: from .env or admin)",
     )
     parser.add_argument(
         "--password",
         type=str,
         default=None,
-        help="Password (default: from .env or analyst123)",
+        help="Password (default: from .env or adminPassword123)",
     )
 
     args = parser.parse_args()
     load_env_variables()
+
+    is_dry_run = not args.confirm or args.dry_run
 
     script_dir = Path(__file__).resolve().parent
     txns_path = Path(args.txns_file)
@@ -218,12 +411,17 @@ def main() -> None:
         logger.error("  python simulator.py --count 300 --accounts 15 --fraud-rate 0.03 --seed 42 --export-txns")
         sys.exit(1)
 
+    report_path = Path(args.report_file)
+    if not report_path.is_absolute():
+        report_path = script_dir / report_path
+
     logger.info(f"Loading exported transactions from: {txns_path}")
     with open(txns_path, "r", encoding="utf-8") as f:
         transactions: List[Dict[str, Any]] = json.load(f)
     logger.info(f"Loaded {len(transactions)} exported transactions.")
 
-    by_id, by_ts_amt = build_txn_indexes(transactions)
+    log_index = build_txn_log_index(transactions)
+    logger.info(f"Indexed {len(log_index)} unique (accountId, seq) transaction log entries.")
 
     api_base_url = args.api_url or os.getenv("API_BASE_URL", "http://localhost:8080").rstrip("/")
     username = args.username or os.getenv("SIMULATOR_USERNAME", "admin")
@@ -240,23 +438,51 @@ def main() -> None:
     alerts = fetch_all_alerts(session, api_base_url, headers)
     logger.info(f"Retrieved {len(alerts)} total alerts from backend.")
 
-    total_alerts = len(alerts)
+    # Fetch detail for each alert
+    alert_details: List[Dict[str, Any]] = []
+    for alert in alerts:
+        alert_id = alert.get("id")
+        if not alert_id:
+            continue
+        detail = fetch_alert_detail(session, api_base_url, headers, alert_id)
+        if detail:
+            alert_details.append(detail)
+
+    matched_verdicts, unmatched_count, scenario_x_label, scenario_x_decision = process_alerts(
+        alert_details, log_index
+    )
+
+    legit_alerts_count = sum(
+        counts.get("LEGITIMATE", 0) for counts in scenario_x_label.values()
+    )
+
+    if is_dry_run:
+        logger.info("[DRY-RUN MODE] Computing ground-truth matches without submitting verdicts.")
+        print_scenario_tables(scenario_x_label, scenario_x_decision, unmatched_count)
+        logger.info("[DRY-RUN COMPLETE] POSTed 0 verdicts. Pass --confirm to submit real verdicts.")
+        return
+
+    # Real submission mode (--confirm)
+    logger.info("Confirm flag present: validating simulator report ground truth before submission...")
+    if not validate_legit_count_against_report(report_path, legit_alerts_count):
+        logger.error("Simulator report validation failed. Aborting submission.")
+        sys.exit(1)
+
+    print_scenario_tables(scenario_x_label, scenario_x_decision, unmatched_count)
+
     already_verdicted = 0
     existing_fraud = 0
     existing_legit = 0
-
     new_submitted = 0
     new_fraud = 0
     new_legit = 0
 
-    for idx, alert in enumerate(alerts, start=1):
-        alert_id = alert.get("id")
-        if not alert_id:
-            continue
-
-        detail = fetch_alert_detail(session, api_base_url, headers, alert_id)
-        if not detail:
-            continue
+    total_matched = len(matched_verdicts)
+    for idx, item in enumerate(matched_verdicts, start=1):
+        alert_id = item["alert_id"]
+        detail = item["detail"]
+        verdict = item["verdict"]
+        comment = item["comment"]
 
         verdict_obj = detail.get("verdict")
         if verdict_obj is not None:
@@ -268,22 +494,15 @@ def main() -> None:
                 existing_legit += 1
             continue
 
-        # Alert is un-verdicted -> determine verdict from matched scenario
-        scenario = match_scenario(detail, by_id, by_ts_amt)
-        is_fraud = scenario != "LEGIT"
-        verdict = "FRAUD" if is_fraud else "LEGITIMATE"
-        txn_ts = detail.get("transactionTimestamp") or datetime.now(timezone.utc).isoformat()
-        comment = f"Seeded from simulator run {txn_ts} scenario {scenario}"
-
         success = submit_verdict(session, api_base_url, headers, alert_id, verdict, comment)
         if success:
             new_submitted += 1
-            if is_fraud:
+            if verdict == "FRAUD":
                 new_fraud += 1
             else:
                 new_legit += 1
 
-            if new_submitted % 5 == 0 or idx == total_alerts:
+            if new_submitted % 5 == 0 or idx == total_matched:
                 logger.info(f"[Progress] Submitted {new_submitted} verdicts (Fraud: {new_fraud}, Legit: {new_legit})...")
 
     cum_total = already_verdicted + new_submitted
@@ -299,7 +518,8 @@ def main() -> None:
     logger.info("=" * 65)
     logger.info("VERDICT SEEDING SUMMARY")
     logger.info("=" * 65)
-    logger.info(f"Total Alerts Inspected:       {total_alerts}")
+    logger.info(f"Total Alerts Inspected:       {len(alert_details)}")
+    logger.info(f"Unmatched Alerts:             {unmatched_count}")
     logger.info(f"Already Verdicted Alerts:     {already_verdicted} (Fraud: {existing_fraud}, Legit: {existing_legit})")
     logger.info(f"New Verdicts Submitted:       {new_submitted}")
     logger.info(f"  - FRAUD:                    {new_fraud}")
@@ -314,12 +534,6 @@ def main() -> None:
         logger.info("ELIGIBILITY STATUS:           PASS (Eligible for retraining trigger)")
     else:
         logger.info("ELIGIBILITY STATUS:           FAIL (Insufficient verdicts for retraining)")
-        if cum_total < MIN_TOTAL_VERDICTS:
-            logger.info(f"  * Need at least {MIN_TOTAL_VERDICTS - cum_total} more total verdicts.")
-        if cum_fraud < MIN_PER_CLASS:
-            logger.info(f"  * Need at least {MIN_PER_CLASS - cum_fraud} more FRAUD verdicts.")
-        if cum_legit < MIN_PER_CLASS:
-            logger.info(f"  * Need at least {MIN_PER_CLASS - cum_legit} more LEGITIMATE verdicts.")
     logger.info("=" * 65)
 
 
