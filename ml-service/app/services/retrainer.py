@@ -49,7 +49,7 @@ CONTRACT_FEATURES = [
 ]
 
 
-def resolve_paths() -> Tuple[Path, Path, Path]:
+def resolve_paths(model_store_override: Path | None = None) -> Tuple[Path, Path, Path]:
     """Resolve paths to synthetic dataset, contract schema, and model store."""
     service_root = Path(__file__).resolve().parents[2]
     repo_root = service_root.parent
@@ -81,7 +81,10 @@ def resolve_paths() -> Tuple[Path, Path, Path]:
         raise FileNotFoundError(f"Could not find feature_schema_v1.json in {[str(p) for p in candidate_schema_paths]}")
 
     # 3. Model store root
-    model_store_dir = service_root / "model_store"
+    if model_store_override is not None:
+        model_store_dir = Path(model_store_override).resolve()
+    else:
+        model_store_dir = service_root / "model_store"
     model_store_dir.mkdir(parents=True, exist_ok=True)
 
     return data_path, schema_path, model_store_dir
@@ -232,6 +235,7 @@ def validate_training_examples(training_examples: List[Dict[str, Any]]) -> List[
 def run_candidate_retraining(
     model_version_candidate: str,
     training_examples: List[Dict[str, Any]],
+    model_store_dir_override: Path | None = None,
 ) -> Dict[str, Any]:
     """Execute complete retraining pipeline for a candidate model version.
 
@@ -252,7 +256,7 @@ def run_candidate_retraining(
         raise ValueError("model_version_candidate contains invalid path characters")
 
     validated_examples = validate_training_examples(training_examples)
-    data_path, schema_path, model_store_dir = resolve_paths()
+    data_path, schema_path, model_store_dir = resolve_paths(model_store_dir_override)
 
     candidate_dir = model_store_dir / model_version_candidate
     candidate_dir.mkdir(parents=True, exist_ok=True)

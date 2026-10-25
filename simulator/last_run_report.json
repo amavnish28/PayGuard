@@ -1,0 +1,50 @@
+{
+  "run_config": {
+    "count": 10000,
+    "duration": null,
+    "tps": 25.0,
+    "seed": 42,
+    "accounts": 20,
+    "fraud_rate": 0.05,
+    "sim_start": "2026-10-01T00:00:00+05:30"
+  },
+  "total_sent": 10000,
+  "total_failed": 0,
+  "decision_counts": {
+    "APPROVE": 9278,
+    "REVIEW": 267,
+    "BLOCK": 455
+  },
+  "scenario_breakdown": {
+    "LEGIT": {
+      "sent": 8857,
+      "flagged_review_or_block": 3
+    },
+    "ACCOUNT_TAKEOVER": {
+      "sent": 206,
+      "flagged_review_or_block": 181
+    },
+    "CARD_TESTING": {
+      "sent": 618,
+      "flagged_review_or_block": 408
+    },
+    "ODD_HOUR_TRANSFER": {
+      "sent": 121,
+      "flagged_review_or_block": 113
+    },
+    "SUBTLE": {
+      "sent": 113,
+      "flagged_review_or_block": 17
+    },
+    "STEALTH": {
+      "sent": 85,
+      "flagged_review_or_block": 0
+    }
+  },
+  "ml_availability_rate": 0.9998,
+  "wall_clock_duration_seconds": 680.99,
+  "simulated_time_range": {
+    "start": "2026-10-01T08:03:59.631156+05:30",
+    "end": "2027-03-24T08:10:05.852179+05:30"
+  }
+}

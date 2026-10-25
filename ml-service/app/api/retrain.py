@@ -5,8 +5,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 import logging
+import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
+import uuid
 
 from fastapi import APIRouter, HTTPException, Request, status
 import joblib
@@ -24,8 +26,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["retraining"])
 
 
-def _get_model_store_dir() -> Path:
-    """Return Path to model_store directory."""
+def _get_model_store_dir(request: Request | None = None) -> Path:
+    """Return Path to model_store directory, using app.state.model_store_dir if configured."""
+    if request is not None and getattr(request.app.state, "model_store_dir", None):
+        return Path(request.app.state.model_store_dir).resolve()
     service_root = Path(__file__).resolve().parents[2]
     return service_root / "model_store"
 
@@ -61,10 +65,13 @@ async def retrain(request: Request) -> RetrainResponse:
             detail="Field 'training_examples' must be a list of examples",
         )
 
+    model_store_dir = _get_model_store_dir(request)
+
     try:
         result = run_candidate_retraining(
             model_version_candidate=model_version_candidate.strip(),
             training_examples=training_examples,
+            model_store_dir_override=model_store_dir,
         )
     except ValueError as e:
         logger.warning("Retrain validation error: %s", e)
@@ -82,19 +89,32 @@ async def retrain(request: Request) -> RetrainResponse:
     return RetrainResponse(**result)
 
 
-def _load_and_validate_candidate(model_version: str, schema: dict[str, Any]) -> Tuple[Any, Any, Dict[str, Any], Predictor]:
+def _load_and_validate_candidate(
+    model_version: str,
+    schema: dict[str, Any],
+    model_store_dir: Path | None = None,
+) -> Tuple[Any, Any, Dict[str, Any], Predictor]:
     """Load model, explainer, and metadata for a version; validates files exist and are valid.
 
     Does NOT touch live app state.
     """
-    model_store_dir = _get_model_store_dir()
+    if model_store_dir is None:
+        model_store_dir = _get_model_store_dir()
     version_dir = model_store_dir / model_version
 
     if not version_dir.exists() or not version_dir.is_dir():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Model version directory '{model_version}' does not exist in model_store.",
-        )
+        alt_dir = model_store_dir / model_version.replace("-", "_")
+        if alt_dir.exists() and alt_dir.is_dir():
+            version_dir = alt_dir
+        else:
+            alt_dir2 = model_store_dir / model_version.replace("_", "-")
+            if alt_dir2.exists() and alt_dir2.is_dir():
+                version_dir = alt_dir2
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Model version directory '{model_version}' does not exist in model_store.",
+                )
 
     model_path = version_dir / "model.joblib"
     explainer_path = version_dir / "explainer.joblib"
@@ -145,7 +165,8 @@ def validate_model(request: ModelActivateRequest, req: Request) -> Dict[str, Any
             detail="Feature schema not available in app state.",
         )
 
-    _load_and_validate_candidate(request.model_version.strip(), schema)
+    model_store_dir = _get_model_store_dir(req)
+    _load_and_validate_candidate(request.model_version.strip(), schema, model_store_dir)
     return {
         "status": "valid",
         "model_version": request.model_version.strip(),
@@ -163,8 +184,12 @@ def activate_model(request: ModelActivateRequest, req: Request) -> ModelActivate
             detail="Feature schema not available in app state.",
         )
 
+    model_store_dir = _get_model_store_dir(req)
+
     # 1. Load and validate completely BEFORE touching the live references
-    new_model, new_explainer, new_metadata, new_predictor = _load_and_validate_candidate(model_version, schema)
+    new_model, new_explainer, new_metadata, new_predictor = _load_and_validate_candidate(
+        model_version, schema, model_store_dir
+    )
 
     # 2. Hot-swap live references in app.state atomically in Python GIL
     req.app.state.model = new_model
@@ -172,6 +197,28 @@ def activate_model(request: ModelActivateRequest, req: Request) -> ModelActivate
     req.app.state.metadata = new_metadata
     req.app.state.predictor = new_predictor
     req.app.state.model_loaded = True
+
+    # 3. Write model_store/active_model.json atomically (write temp file, then rename)
+    active_model_file = model_store_dir / "active_model.json"
+    temp_file = model_store_dir / f"active_model.json.tmp.{uuid.uuid4().hex}"
+    try:
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump({"model_version": model_version}, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_file, active_model_file)
+        logger.info("Successfully persisted active model pointer '%s' to %s", model_version, active_model_file)
+    except Exception as e:
+        logger.exception("Failed to write active model pointer to %s: %s", active_model_file, e)
+        if temp_file.exists():
+            try:
+                temp_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to persist active model pointer: {e}",
+        )
 
     activated_at = datetime.now(timezone.utc).isoformat()
     logger.info("Successfully hot-swapped live serving model to version '%s'", model_version)

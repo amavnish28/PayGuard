@@ -16,17 +16,32 @@ from app.main import app
 
 ML_SERVICE_ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ML_SERVICE_ROOT / "data" / "synthetic" / "synthetic_v1.csv"
-MODEL_STORE_DIR = ML_SERVICE_ROOT / "model_store"
 ACTIVE_VERSION = "xgboost-v1"
 
 
-@pytest.fixture(scope="module")
-def client():
-    """FastAPI TestClient with real model artifacts loaded."""
+@pytest.fixture
+def model_store_dir(tmp_path: Path) -> Path:
+    """Create an isolated temporary model_store with a copy of real xgboost_v1 artifacts."""
+    test_store = tmp_path / "model_store"
+    test_store.mkdir(parents=True, exist_ok=True)
+    real_store = ML_SERVICE_ROOT / "model_store"
+    shutil.copytree(real_store / "xgboost_v1", test_store / "xgboost_v1")
+    return test_store
+
+
+@pytest.fixture
+def client(model_store_dir: Path):
+    """FastAPI TestClient with isolated tmp_path model_store injected into app."""
+    from app.main import load_app_state
+
+    app.state.model_store_dir = model_store_dir
+    load_app_state(app, model_store_dir_override=model_store_dir)
     with TestClient(app) as test_client:
         yield test_client
-        # Ensure active model is restored to xgboost-v1 upon teardown
-        test_client.post("/api/v1/model/activate", json={"model_version": ACTIVE_VERSION})
+    # Teardown: restore app state to real model_store
+    real_store = ML_SERVICE_ROOT / "model_store"
+    app.state.model_store_dir = real_store
+    load_app_state(app, model_store_dir_override=real_store)
 
 
 def _sample_valid_training_examples() -> List[Dict[str, Any]]:
@@ -99,11 +114,11 @@ def _sample_valid_training_examples() -> List[Dict[str, Any]]:
     ]
 
 
-def test_retrain_valid_payload_success(client: TestClient):
+def test_retrain_valid_payload_success(client: TestClient, model_store_dir: Path):
     """POST /retrain succeeds, outputs metrics, and writes candidate files without touching xgboost-v1."""
     candidate_name = "test-xgboost-candidate-valid"
-    candidate_dir = MODEL_STORE_DIR / candidate_name
-    xgboost_v1_dir = MODEL_STORE_DIR / "xgboost_v1"
+    candidate_dir = model_store_dir / candidate_name
+    xgboost_v1_dir = model_store_dir / "xgboost_v1"
 
     # Capture modification times of xgboost_v1 files to verify untouched
     xgboost_v1_mtimes = {
@@ -220,7 +235,7 @@ def test_retrain_malformed_features_returns_400(client: TestClient):
     assert res3.status_code == 400
 
 
-def test_retrain_test_split_unmodified_invariant(client: TestClient):
+def test_retrain_test_split_unmodified_invariant(client: TestClient, model_store_dir: Path):
     """Enforcement test: Held-out test split is byte-identical before and after /retrain."""
     df_before = pd.read_csv(DATA_PATH)
     test_rows_before = df_before[df_before["split"] == "test"]
@@ -228,7 +243,7 @@ def test_retrain_test_split_unmodified_invariant(client: TestClient):
     csv_bytes_before = test_rows_before.to_csv().encode("utf-8")
 
     candidate_name = "test-test-split-invariant"
-    candidate_dir = MODEL_STORE_DIR / candidate_name
+    candidate_dir = model_store_dir / candidate_name
 
     try:
         payload = {
@@ -252,10 +267,10 @@ def test_retrain_test_split_unmodified_invariant(client: TestClient):
             shutil.rmtree(candidate_dir, ignore_errors=True)
 
 
-def test_model_activate_valid_hot_swap(client: TestClient):
+def test_model_activate_valid_hot_swap(client: TestClient, model_store_dir: Path):
     """POST /model/activate with valid version hot-swaps live model, verified via info and predict."""
     candidate_name = "test-activate-valid-v2"
-    candidate_dir = MODEL_STORE_DIR / candidate_name
+    candidate_dir = model_store_dir / candidate_name
 
     try:
         # First train a valid candidate
@@ -318,10 +333,10 @@ def test_model_activate_non_existent_version_returns_404(client: TestClient):
     assert info_after["model_version"] == info_before["model_version"]
 
 
-def test_model_activate_corrupted_files_fails_cleanly(client: TestClient):
+def test_model_activate_corrupted_files_fails_cleanly(client: TestClient, model_store_dir: Path):
     """POST /model/activate with corrupted files fails and leaves active model untouched."""
     corrupted_version = "test-corrupted-candidate"
-    corrupted_dir = MODEL_STORE_DIR / corrupted_version
+    corrupted_dir = model_store_dir / corrupted_version
     corrupted_dir.mkdir(parents=True, exist_ok=True)
 
     try:
@@ -342,3 +357,73 @@ def test_model_activate_corrupted_files_fails_cleanly(client: TestClient):
     finally:
         if corrupted_dir.exists():
             shutil.rmtree(corrupted_dir, ignore_errors=True)
+
+
+def test_startup_reconciliation_honors_active_pointer(client: TestClient, model_store_dir: Path):
+    """Restart simulation: activate candidate, re-initialize app state, assert pointer is honored."""
+    candidate_name = "test-reconciliation-valid-v2"
+    candidate_dir = model_store_dir / candidate_name
+    active_pointer_file = model_store_dir / "active_model.json"
+
+    try:
+        # 1. Train candidate
+        payload = {
+            "model_version_candidate": candidate_name,
+            "training_examples": _sample_valid_training_examples(),
+        }
+        retrain_res = client.post("/api/v1/retrain", json=payload)
+        assert retrain_res.status_code == 200
+
+        # 2. Activate candidate
+        activate_res = client.post("/api/v1/model/activate", json={"model_version": candidate_name})
+        assert activate_res.status_code == 200
+        assert active_pointer_file.exists()
+
+        with open(active_pointer_file, "r", encoding="utf-8") as f:
+            pointer_data = json.load(f)
+        assert pointer_data.get("model_version") == candidate_name
+
+        # 3. Simulate restart: re-initialize app state with injected model_store_dir
+        from app.main import load_app_state
+        load_app_state(app, model_store_dir_override=model_store_dir)
+
+        # 4. Assert pointer is honored
+        info_res = client.get("/api/v1/model/info")
+        assert info_res.status_code == 200
+        assert info_res.json()["model_version"] == candidate_name
+
+    finally:
+        # Restore active model to xgboost-v1 and cleanup pointer
+        client.post("/api/v1/model/activate", json={"model_version": "xgboost-v1"})
+        if active_pointer_file.exists():
+            active_pointer_file.unlink(missing_ok=True)
+        if candidate_dir.exists():
+            shutil.rmtree(candidate_dir, ignore_errors=True)
+        from app.main import load_app_state
+        load_app_state(app, model_store_dir_override=model_store_dir)
+
+
+def test_startup_reconciliation_corrupted_pointer_falls_back_to_v1(client: TestClient, model_store_dir: Path):
+    """Corrupt active pointer on disk falls back to xgboost_v1 with a warning on restart."""
+    active_pointer_file = model_store_dir / "active_model.json"
+
+    try:
+        # Write corrupted JSON to active_model.json
+        active_pointer_file.write_text("{malformed: json invalid", encoding="utf-8")
+
+        # Re-initialize app state with injected model_store_dir
+        from app.main import load_app_state
+        load_app_state(app, model_store_dir_override=model_store_dir)
+
+        # Assert fallback to xgboost-v1
+        info_res = client.get("/api/v1/model/info")
+        assert info_res.status_code == 200
+        assert info_res.json()["model_version"] == "xgboost-v1"
+        assert app.state.model_loaded is True
+
+    finally:
+        if active_pointer_file.exists():
+            active_pointer_file.unlink(missing_ok=True)
+        from app.main import load_app_state
+        load_app_state(app, model_store_dir_override=model_store_dir)
+

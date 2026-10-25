@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payguard_test
+    username: payguard
+    password: payguard_dev_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+payguard:
+  admin:
+    username: admin
+    password: adminPassword123
+    email: admin@payguard.com
+
+PAYGUARD_ADMIN_USERNAME: admin
+PAYGUARD_ADMIN_PASSWORD: adminPassword123
+PAYGUARD_ADMIN_EMAIL: admin@payguard.com
