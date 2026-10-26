@@ -18,6 +18,8 @@ public interface ModelVersionRepository extends JpaRepository<ModelVersion, UUID
 
     List<ModelVersion> findAllByIsActiveTrue();
 
+    List<ModelVersion> findAllByOrderByCreatedAtDesc();
+
     @Modifying
     @Query("UPDATE ModelVersion m SET m.isActive = false WHERE m.isActive = true")
     int deactivateAll();

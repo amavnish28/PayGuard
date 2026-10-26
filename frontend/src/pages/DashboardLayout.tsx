@@ -60,10 +60,12 @@ export const DashboardLayout: React.FC = () => {
             <span className="badge-tag">Soon</span>
           </div>
 
-          <div className="nav-link disabled" title="Coming soon">
+          <NavLink
+            to="/model-performance"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
             <span>Model Performance</span>
-            <span className="badge-tag">Soon</span>
-          </div>
+          </NavLink>
 
           {user?.role === 'ADMIN' && (
             <div className="nav-link disabled" title="Coming soon — ADMIN only">

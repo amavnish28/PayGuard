@@ -5,6 +5,7 @@ import { DashboardLayout } from './pages/DashboardLayout';
 import { OverviewPage } from './pages/OverviewPage';
 import { AlertsListPage } from './pages/AlertsListPage';
 import { AlertDetailPage } from './pages/AlertDetailPage';
+import { ModelPerformancePage } from './pages/ModelPerformancePage';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 
 export const App: React.FC = () => {
@@ -17,6 +18,7 @@ export const App: React.FC = () => {
           <Route path="/overview" element={<OverviewPage />} />
           <Route path="/alerts" element={<AlertsListPage />} />
           <Route path="/alerts/:id" element={<AlertDetailPage />} />
+          <Route path="/model-performance" element={<ModelPerformancePage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/overview" replace />} />
