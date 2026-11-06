@@ -9,7 +9,7 @@ import com.payguard.transaction.Transaction;
 import com.payguard.transaction.TransactionRepository;
 import com.payguard.transaction.TransactionService;
 import com.payguard.transaction.dto.TransactionRequest;
-import com.payguard.transaction.dto.TransactionResponse;
+import com.payguard.transaction.dto.TransactionResult;
 import com.payguard.transaction.feature.TransactionFeature;
 import com.payguard.transaction.feature.TransactionFeatureRepository;
 import com.payguard.user.User;
@@ -216,7 +216,7 @@ class RealFastAPIRetrainingIntegrationTest {
                 OffsetDateTime.now()
         );
 
-        TransactionResponse txResp = transactionService.createTransaction(req);
+        TransactionResult txResp = transactionService.createTransaction(req);
         assertNotNull(txResp);
         assertEquals("APPROVE", txResp.getDecision());
         assertTrue(txResp.getMlAvailable());

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -427,5 +428,29 @@ class TransactionIntegrationTest {
         boolean hasIsFraudField = Arrays.stream(TransactionRequest.class.getDeclaredFields())
                 .anyMatch(field -> field.getName().equalsIgnoreCase("isFraud"));
         assertFalse(hasIsFraudField, "TransactionRequest DTO must not expose isFraud as an accepted application field");
+    }
+
+    @Test
+    @DisplayName("12. Successful POST /api/transactions contains exactly keys: transactionId, decision, message and nothing else")
+    void testSuccessfulTransactionResponseContainsOnlyWhitelistedKeys() throws Exception {
+        String txnId = "TXN-WHITELIST-" + UUID.randomUUID();
+        TransactionRequest request = createValidRequest(txnId);
+
+        mockMvc.perform(post("/api/transactions")
+                        .header("Authorization", "Bearer " + validJwtToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.transactionId").value(txnId))
+                .andExpect(jsonPath("$.decision").value("APPROVE"))
+                .andExpect(jsonPath("$.message").value("Transaction accepted for processing"))
+                .andExpect(jsonPath("$.*", hasSize(3)))
+                .andExpect(jsonPath("$", aMapWithSize(3)))
+                .andExpect(jsonPath("$.ruleScore").doesNotExist())
+                .andExpect(jsonPath("$.triggeredRules").doesNotExist())
+                .andExpect(jsonPath("$.reasons").doesNotExist())
+                .andExpect(jsonPath("$.mlAvailable").doesNotExist())
+                .andExpect(jsonPath("$.fraudProbability").doesNotExist())
+                .andExpect(jsonPath("$.mlBand").doesNotExist());
     }
 }

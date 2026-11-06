@@ -15,6 +15,7 @@ import com.payguard.ml.MLPredictionResponse;
 import com.payguard.ml.MLServiceClient;
 import com.payguard.transaction.dto.TransactionRequest;
 import com.payguard.transaction.dto.TransactionResponse;
+import com.payguard.transaction.dto.TransactionResult;
 import com.payguard.transaction.feature.BehavioralFeatureResult;
 import com.payguard.transaction.feature.BehavioralFeatureService;
 import com.payguard.transaction.feature.TransactionFeature;
@@ -63,7 +64,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public TransactionResponse createTransaction(TransactionRequest request) {
+    public TransactionResult createTransaction(TransactionRequest request) {
         // Concurrency: Acquire transaction-level advisory lock on account to serialize concurrent processing
         transactionRepository.acquireAccountAdvisoryLock(request.getAccountId());
 
@@ -174,10 +175,8 @@ public class TransactionService {
             auditLogRepository.saveAndFlush(auditLog);
         }
 
-        // 9. Build response with real hybrid decision
-        // TODO: Do NOT expose shapReasons or the internal alert id in this response yet
-        // (that belongs to a dedicated alert-detail endpoint in a later phase).
-        return new TransactionResponse(
+        // 9. Build internal result with real hybrid decision
+        return new TransactionResult(
                 transaction.getTransactionId(),
                 decisionResult.getDecision().name(),
                 getMessageForDecision(decisionResult.getDecision()),

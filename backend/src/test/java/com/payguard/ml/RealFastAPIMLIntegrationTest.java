@@ -8,7 +8,7 @@ import com.payguard.transaction.TransactionRepository;
 import com.payguard.transaction.TransactionService;
 import com.payguard.transaction.feature.TransactionFeatureRepository;
 import com.payguard.transaction.dto.TransactionRequest;
-import com.payguard.transaction.dto.TransactionResponse;
+import com.payguard.transaction.dto.TransactionResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -84,7 +84,7 @@ class RealFastAPIMLIntegrationTest {
         OffsetDateTime timestamp = OffsetDateTime.parse("2026-09-30T14:00:00+05:30");
 
         TransactionRequest req = createRequest(txnId, accountId, new BigDecimal("25.00"), "DEV-NORMAL", "Delhi", timestamp);
-        TransactionResponse response = transactionService.createTransaction(req);
+        TransactionResult response = transactionService.createTransaction(req);
 
         assertNotNull(response);
         assertEquals("APPROVE", response.getDecision());
@@ -129,7 +129,7 @@ class RealFastAPIMLIntegrationTest {
                 baseTime.plusSeconds(70)    // within 2 minutes of prior txns
         );
 
-        TransactionResponse response = transactionService.createTransaction(highReq);
+        TransactionResult response = transactionService.createTransaction(highReq);
 
         assertNotNull(response);
         assertEquals("BLOCK", response.getDecision(), "High-risk payload should trigger BLOCK hybrid decision");

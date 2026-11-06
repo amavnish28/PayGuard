@@ -1,7 +1,7 @@
 package com.payguard.transaction;
 
 import com.payguard.transaction.dto.TransactionRequest;
-import com.payguard.transaction.dto.TransactionResponse;
+import com.payguard.transaction.dto.TransactionResult;
 import com.payguard.transaction.feature.TransactionFeature;
 import com.payguard.transaction.feature.TransactionFeatureRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -177,7 +177,7 @@ class TransactionalBoundaryAndOrderingIntegrationTest {
         int numThreads = 5;
 
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
-        List<Callable<TransactionResponse>> tasks = new ArrayList<>();
+        List<Callable<TransactionResult>> tasks = new ArrayList<>();
         for (int i = 0; i < numThreads; i++) {
             final int index = i;
             String txnId = "TXN-CONC-" + index + "-" + UUID.randomUUID();
@@ -188,13 +188,13 @@ class TransactionalBoundaryAndOrderingIntegrationTest {
             tasks.add(() -> transactionService.createTransaction(req));
         }
 
-        List<Future<TransactionResponse>> futures = executor.invokeAll(tasks);
+        List<Future<TransactionResult>> futures = executor.invokeAll(tasks);
         executor.shutdown();
         assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
 
         // All transactions should succeed
-        for (Future<TransactionResponse> f : futures) {
-            TransactionResponse resp = f.get();
+        for (Future<TransactionResult> f : futures) {
+            TransactionResult resp = f.get();
             assertNotNull(resp);
             assertTrue("APPROVE".equals(resp.getDecision()) || "REVIEW".equals(resp.getDecision()),
                     "Expected APPROVE or REVIEW, got: " + resp.getDecision());

@@ -1,10 +1,15 @@
 package com.payguard.transaction;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.payguard.alert.Alert;
+import com.payguard.alert.AlertRepository;
 import com.payguard.security.JwtService;
 import com.payguard.transaction.dto.TransactionRequest;
+import com.payguard.transaction.feature.BehavioralFeatureResult;
 import com.payguard.transaction.feature.TransactionFeature;
 import com.payguard.transaction.feature.TransactionFeatureRepository;
+import com.payguard.transaction.rule.FraudRulesEngine;
+import com.payguard.transaction.rule.RuleEvaluation;
 import com.payguard.user.User;
 import com.payguard.user.UserRole;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,8 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -47,7 +54,29 @@ class BehavioralFeatureIntegrationTest {
     @Autowired
     private TransactionFeatureRepository transactionFeatureRepository;
 
+    @Autowired
+    private AlertRepository alertRepository;
+
+    @Autowired
+    private FraudRulesEngine fraudRulesEngine;
+
     private String validJwtToken;
+
+    private RuleEvaluation evaluateRulesFor(Transaction txn, TransactionFeature feature) {
+        BehavioralFeatureResult bfr = new BehavioralFeatureResult(
+                feature.getTransactionsLast2Min(),
+                feature.getTransactionsLast1Hour(),
+                feature.getAccountAvgAmount(),
+                feature.getAmountRatio(),
+                feature.getTimeSincePreviousTransactionSeconds(),
+                feature.getNewDevice(),
+                feature.getNewLocation(),
+                feature.getTransactionHour(),
+                feature.getOddHour(),
+                feature.getTimeSincePreviousTransactionSeconds() != null
+        );
+        return fraudRulesEngine.evaluate(txn, bfr);
+    }
 
     @BeforeEach
     void setUp() {
@@ -92,13 +121,15 @@ class BehavioralFeatureIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.transactionId").value(txnId))
-                .andExpect(jsonPath("$.decision").value("APPROVE"))
-                .andExpect(jsonPath("$.ruleScore").value(0))
-                .andExpect(jsonPath("$.triggeredRules", hasSize(0)))
-                .andExpect(jsonPath("$.reasons", hasSize(0)));
+                .andExpect(jsonPath("$.decision").value("APPROVE"));
 
         Transaction savedTxn = transactionRepository.findByTransactionId(txnId).orElseThrow();
         TransactionFeature feature = transactionFeatureRepository.findByTransactionRefId(savedTxn.getId()).orElseThrow();
+
+        RuleEvaluation ruleEval = evaluateRulesFor(savedTxn, feature);
+        assertEquals(0, ruleEval.getRuleScore());
+        assertTrue(ruleEval.getTriggeredRules().isEmpty());
+        assertTrue(ruleEval.getReasons().isEmpty());
 
         assertEquals(0, feature.getTransactionsLast2Min());
         assertEquals(0, feature.getTransactionsLast1Hour());
@@ -140,11 +171,14 @@ class BehavioralFeatureIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req2)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.ruleScore").value(0))
-                .andExpect(jsonPath("$.triggeredRules", hasSize(0)));
+                .andExpect(jsonPath("$.decision").value("APPROVE"));
 
         Transaction savedTxn2 = transactionRepository.findByTransactionId(txn2Id).orElseThrow();
         TransactionFeature feature2 = transactionFeatureRepository.findByTransactionRefId(savedTxn2.getId()).orElseThrow();
+
+        RuleEvaluation ruleEval2 = evaluateRulesFor(savedTxn2, feature2);
+        assertEquals(0, ruleEval2.getRuleScore());
+        assertTrue(ruleEval2.getTriggeredRules().isEmpty());
 
         assertFalse(feature2.getNewDevice());
         assertFalse(feature2.getNewLocation());
@@ -185,13 +219,21 @@ class BehavioralFeatureIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(fifthReq)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.ruleScore").value(30))
-                .andExpect(jsonPath("$.triggeredRules", contains("VELOCITY")))
-                .andExpect(jsonPath("$.reasons", contains("5 or more transactions from the account within 2 minutes")));
+                .andExpect(jsonPath("$.decision").value("REVIEW"));
 
         Transaction savedTxn = transactionRepository.findByTransactionId(fifthTxnId).orElseThrow();
         TransactionFeature feature = transactionFeatureRepository.findByTransactionRefId(savedTxn.getId()).orElseThrow();
         assertEquals(4, feature.getTransactionsLast2Min());
+
+        Alert alert = alertRepository.findByTransactionId(savedTxn.getId())
+                .orElseThrow(() -> new AssertionError("Alert row MUST exist for VELOCITY triggered transaction"));
+        assertEquals(0, new BigDecimal("30.00").compareTo(alert.getRuleScore()));
+        @SuppressWarnings("unchecked")
+        List<String> triggered = (List<String>) alert.getExplanation().get("triggeredRules");
+        assertThat(triggered, contains("VELOCITY"));
+        @SuppressWarnings("unchecked")
+        List<String> reasons = (List<String>) alert.getExplanation().get("ruleReasons");
+        assertThat(reasons, contains("5 or more transactions from the account within 2 minutes"));
     }
 
     @Test
@@ -226,12 +268,15 @@ class BehavioralFeatureIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(fourthReq)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.ruleScore").value(0))
-                .andExpect(jsonPath("$.triggeredRules", not(hasItem("VELOCITY"))));
+                .andExpect(jsonPath("$.decision").value("APPROVE"));
 
         Transaction savedTxn = transactionRepository.findByTransactionId(fourthTxnId).orElseThrow();
         TransactionFeature feature = transactionFeatureRepository.findByTransactionRefId(savedTxn.getId()).orElseThrow();
         assertEquals(3, feature.getTransactionsLast2Min());
+
+        RuleEvaluation ruleEval = evaluateRulesFor(savedTxn, feature);
+        assertEquals(0, ruleEval.getRuleScore());
+        assertFalse(ruleEval.getTriggeredRules().contains("VELOCITY"));
     }
 
     @Test
@@ -264,14 +309,17 @@ class BehavioralFeatureIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req2)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.ruleScore").value(25))
-                .andExpect(jsonPath("$.triggeredRules", contains("HIGH_AMOUNT")))
-                .andExpect(jsonPath("$.reasons", contains("Transaction amount is at least 3x the account historical average")));
+                .andExpect(jsonPath("$.decision").value("APPROVE"));
 
         Transaction savedTxn = transactionRepository.findByTransactionId(t2Id).orElseThrow();
         TransactionFeature feature = transactionFeatureRepository.findByTransactionRefId(savedTxn.getId()).orElseThrow();
         assertEquals(new BigDecimal("1000.00"), feature.getAccountAvgAmount());
         assertEquals(new BigDecimal("3.0000"), feature.getAmountRatio());
+
+        RuleEvaluation ruleEval = evaluateRulesFor(savedTxn, feature);
+        assertEquals(25, ruleEval.getRuleScore());
+        assertThat(ruleEval.getTriggeredRules(), contains("HIGH_AMOUNT"));
+        assertThat(ruleEval.getReasons(), contains("Transaction amount is at least 3x the account historical average"));
     }
 
     @Test
@@ -362,8 +410,15 @@ class BehavioralFeatureIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req2)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.ruleScore").value(45))
-                .andExpect(jsonPath("$.triggeredRules", containsInAnyOrder("NEW_DEVICE", "NEW_LOCATION", "ODD_HOUR_HIGH_VALUE")));
+                .andExpect(jsonPath("$.decision").value("REVIEW"));
+
+        Transaction savedTxn = transactionRepository.findByTransactionId(t2Id).orElseThrow();
+        Alert alert = alertRepository.findByTransactionId(savedTxn.getId())
+                .orElseThrow(() -> new AssertionError("Alert row MUST exist for multi-rule triggered transaction"));
+        assertEquals(0, new BigDecimal("45.00").compareTo(alert.getRuleScore()));
+        @SuppressWarnings("unchecked")
+        List<String> triggered = (List<String>) alert.getExplanation().get("triggeredRules");
+        assertThat(triggered, containsInAnyOrder("NEW_DEVICE", "NEW_LOCATION", "ODD_HOUR_HIGH_VALUE"));
     }
 
     @Test

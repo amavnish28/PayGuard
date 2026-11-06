@@ -13,7 +13,7 @@ import com.payguard.ml.MLPredictionRequest;
 import com.payguard.ml.MLPredictionResponse;
 import com.payguard.ml.MLServiceClient;
 import com.payguard.transaction.dto.TransactionRequest;
-import com.payguard.transaction.dto.TransactionResponse;
+import com.payguard.transaction.dto.TransactionResult;
 import com.payguard.transaction.feature.BehavioralFeatureResult;
 import com.payguard.transaction.feature.BehavioralFeatureService;
 import com.payguard.transaction.feature.TransactionFeature;
@@ -122,7 +122,7 @@ class TransactionServiceTest {
         );
         when(hybridDecisionEngine.evaluate(any(RuleEvaluation.class), any())).thenReturn(decisionResult);
 
-        TransactionResponse response = transactionService.createTransaction(sampleRequest);
+        TransactionResult response = transactionService.createTransaction(sampleRequest);
 
         assertNotNull(response);
         assertEquals(sampleRequest.getTransactionId(), response.getTransactionId());
@@ -181,7 +181,7 @@ class TransactionServiceTest {
         );
         when(hybridDecisionEngine.evaluate(any(RuleEvaluation.class), any())).thenReturn(decisionResult);
 
-        TransactionResponse response = transactionService.createTransaction(sampleRequest);
+        TransactionResult response = transactionService.createTransaction(sampleRequest);
 
         assertNotNull(response);
         assertEquals("BLOCK", response.getDecision());
@@ -245,7 +245,7 @@ class TransactionServiceTest {
         );
         when(hybridDecisionEngine.evaluate(any(RuleEvaluation.class), any())).thenReturn(decisionResult);
 
-        TransactionResponse response = transactionService.createTransaction(sampleRequest);
+        TransactionResult response = transactionService.createTransaction(sampleRequest);
 
         assertNotNull(response);
         assertEquals("REVIEW", response.getDecision());
@@ -299,7 +299,7 @@ class TransactionServiceTest {
         );
         when(hybridDecisionEngine.evaluate(any(RuleEvaluation.class), eq(Optional.empty()))).thenReturn(fallbackResult);
 
-        TransactionResponse response = transactionService.createTransaction(sampleRequest);
+        TransactionResult response = transactionService.createTransaction(sampleRequest);
 
         assertNotNull(response);
         assertEquals("REVIEW", response.getDecision());

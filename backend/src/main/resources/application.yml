@@ -3,9 +3,9 @@ spring:
     name: payguard-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/payguard
-    username: payguard
-    password: payguard_dev_password
+    url: ${PAYGUARD_DB_URL:jdbc:postgresql://localhost:5432/payguard}
+    username: ${PAYGUARD_DB_USERNAME:payguard}
+    password: ${PAYGUARD_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -21,7 +21,7 @@ server:
 
 payguard:
   jwt:
-    secret: ${PAYGUARD_JWT_SECRET:change-this-development-secret-to-a-long-random-value}
+    secret: ${PAYGUARD_JWT_SECRET}
     expiration-ms: 86400000
   business-zone: ${PAYGUARD_BUSINESS_ZONE:Asia/Kolkata}
   ml-service:

@@ -9,7 +9,7 @@ import com.payguard.transaction.Transaction;
 import com.payguard.transaction.TransactionRepository;
 import com.payguard.transaction.TransactionService;
 import com.payguard.transaction.dto.TransactionRequest;
-import com.payguard.transaction.dto.TransactionResponse;
+import com.payguard.transaction.dto.TransactionResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -79,7 +79,7 @@ class ManualVerificationIntegrationTest {
                 OffsetDateTime.parse("2026-09-30T14:30:00+05:30")
         );
 
-        TransactionResponse resp = transactionService.createTransaction(req);
+        TransactionResult resp = transactionService.createTransaction(req);
         System.out.println("=== SCENARIO 1 RESULT ===");
         System.out.println("Transaction ID: " + resp.getTransactionId());
         System.out.println("Decision: " + resp.getDecision());
@@ -136,7 +136,7 @@ class ManualVerificationIntegrationTest {
                 baseTime.plusMinutes(10)
         );
 
-        TransactionResponse resp = transactionService.createTransaction(targetReq);
+        TransactionResult resp = transactionService.createTransaction(targetReq);
         System.out.println("=== SCENARIO 2 RESULT ===");
         System.out.println("Transaction ID: " + resp.getTransactionId());
         System.out.println("Decision: " + resp.getDecision());
@@ -208,7 +208,7 @@ class ManualVerificationIntegrationTest {
                 baseTime.plusSeconds(40)
         );
 
-        TransactionResponse resp = transactionService.createTransaction(targetReq);
+        TransactionResult resp = transactionService.createTransaction(targetReq);
         System.out.println("=== SCENARIO 4 RESULT ===");
         System.out.println("Transaction ID: " + resp.getTransactionId());
         System.out.println("Decision: " + resp.getDecision());
@@ -293,8 +293,12 @@ class ManualVerificationIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(targetReq)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.decision").value("REVIEW"))
-                .andExpect(jsonPath("$.ruleScore").value(30));
+                .andExpect(jsonPath("$.decision").value("REVIEW"));
+
+        Transaction savedTxn = transactionRepository.findByTransactionId(targetTxnId).orElseThrow();
+        Alert alert = alertRepository.findByTransactionId(savedTxn.getId())
+                .orElseThrow(() -> new AssertionError("Alert row MUST exist for VELOCITY triggered transaction"));
+        assertEquals(0, new BigDecimal("30.00").compareTo(alert.getRuleScore()));
 
         System.out.println("=== VELOCITY VERIFICATION TRANSACTION SENT VIA API ===");
         System.out.println("Account ID: " + accountId);
