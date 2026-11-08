@@ -1,0 +1,333 @@
+{
+  "report_title": "PayGuard Load Testing Consolidated Performance Summary",
+  "timestamp": "2026-11-07 14:14:42 UTC",
+  "test_environment": {
+    "host_os": "Windows 11",
+    "cpu_model": "AMD Ryzen 3 5300U with Radeon Graphics (4 cores, 8 threads)",
+    "memory_gb": 8.0,
+    "target_database": "payguard_loadtest",
+    "evaluation_database": "payguard",
+    "backend_base_url": "http://localhost:8080",
+    "ml_service_base_url": "http://localhost:8001"
+  },
+  "database_isolation_verification": {
+    "evaluation_database_status": "UNTOUCHED",
+    "evaluation_database_counts": {
+      "transactions": 10000,
+      "transaction_features": 10000,
+      "alerts": 722,
+      "audit_logs": 5,
+      "leaked_load_records": 0
+    },
+    "loadtest_database_counts": {
+      "transactions": 3535,
+      "transaction_features": 3535,
+      "alerts": 3336,
+      "audit_logs": 328,
+      "users": 1,
+      "model_versions": 1,
+      "duplicate_transactions": 0
+    },
+    "isolation_guard_status": "PASS"
+  },
+  "transaction_reconciliation": {
+    "planned_measured_requests": 3350,
+    "planned_warmup_requests": 185,
+    "total_requests_dispatched": 3535,
+    "persisted_transactions": 3535,
+    "persisted_features": 3535,
+    "persisted_alerts": 3336,
+    "persisted_audit_logs": 328,
+    "decision_distribution": {
+      "REVIEW": 2976,
+      "BLOCK": 360,
+      "APPROVE_NO_ALERT": 199
+    },
+    "reconciliation_status": "100.0% EXACT MATCH (0 duplicates, 0 dropped)"
+  },
+  "benchmarks": {
+    "ml_component": {
+      "timestamp": "2026-11-07 11:05:57 UTC",
+      "target_database": "payguard_loadtest",
+      "evaluation_database": "payguard",
+      "backend_url": "http://localhost:8080",
+      "ml_service_url": "http://localhost:8001",
+      "pre_test_eval_counts": {
+        "transactions": 10000,
+        "transaction_features": 10000,
+        "alerts": 722,
+        "audit_logs": 5
+      },
+      "post_test_eval_counts": {
+        "transactions": 10000,
+        "transaction_features": 10000,
+        "alerts": 722,
+        "audit_logs": 5
+      },
+      "post_test_loadtest_counts": {
+        "transactions": 0,
+        "transaction_features": 0,
+        "alerts": 0,
+        "audit_logs": 0
+      },
+      "leaked_records": 0,
+      "early_abort": false,
+      "stages": [
+        {
+          "stage": "ML-Baseline",
+          "endpoint": "http://localhost:8001/api/v1/predict",
+          "concurrency": 1,
+          "total_requests": 100,
+          "successful_requests": 100,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 2.397,
+          "throughput_rps": 41.71,
+          "avg_latency_ms": 23.9,
+          "p50_latency_ms": 21.41,
+          "p95_latency_ms": 35.14,
+          "p99_latency_ms": 91.72,
+          "max_latency_ms": 93.01,
+          "min_latency_ms": 17.63,
+          "avg_server_ml_latency_ms": 8.6,
+          "safety_aborted": false
+        },
+        {
+          "stage": "ML-Light",
+          "endpoint": "http://localhost:8001/api/v1/predict",
+          "concurrency": 5,
+          "total_requests": 250,
+          "successful_requests": 250,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 3.751,
+          "throughput_rps": 66.65,
+          "avg_latency_ms": 74.48,
+          "p50_latency_ms": 67.76,
+          "p95_latency_ms": 128.32,
+          "p99_latency_ms": 160.0,
+          "max_latency_ms": 195.62,
+          "min_latency_ms": 31.72,
+          "avg_server_ml_latency_ms": 10.05,
+          "safety_aborted": false
+        },
+        {
+          "stage": "ML-Moderate",
+          "endpoint": "http://localhost:8001/api/v1/predict",
+          "concurrency": 10,
+          "total_requests": 500,
+          "successful_requests": 500,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 11.303,
+          "throughput_rps": 44.24,
+          "avg_latency_ms": 224.77,
+          "p50_latency_ms": 142.18,
+          "p95_latency_ms": 695.36,
+          "p99_latency_ms": 1428.09,
+          "max_latency_ms": 2652.0,
+          "min_latency_ms": 68.87,
+          "avg_server_ml_latency_ms": 11.21,
+          "safety_aborted": false
+        },
+        {
+          "stage": "ML-High",
+          "endpoint": "http://localhost:8001/api/v1/predict",
+          "concurrency": 25,
+          "total_requests": 1000,
+          "successful_requests": 1000,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 30.329,
+          "throughput_rps": 32.97,
+          "avg_latency_ms": 752.56,
+          "p50_latency_ms": 424.69,
+          "p95_latency_ms": 2324.62,
+          "p99_latency_ms": 3861.26,
+          "max_latency_ms": 6038.39,
+          "min_latency_ms": 128.17,
+          "avg_server_ml_latency_ms": 9.87,
+          "safety_aborted": false
+        },
+        {
+          "stage": "ML-Stress",
+          "endpoint": "http://localhost:8001/api/v1/predict",
+          "concurrency": 50,
+          "total_requests": 1500,
+          "successful_requests": 1500,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 50.109,
+          "throughput_rps": 29.93,
+          "avg_latency_ms": 1649.87,
+          "p50_latency_ms": 1168.91,
+          "p95_latency_ms": 4957.59,
+          "p99_latency_ms": 7148.12,
+          "max_latency_ms": 13234.45,
+          "min_latency_ms": 136.16,
+          "avg_server_ml_latency_ms": 8.32,
+          "safety_aborted": false
+        }
+      ]
+    },
+    "e2e_pipeline": {
+      "timestamp": "2026-11-07 14:14:42 UTC",
+      "target_database": "payguard_loadtest",
+      "evaluation_database": "payguard",
+      "backend_url": "http://localhost:8080",
+      "ml_service_url": "http://localhost:8001",
+      "pre_test_eval_counts": {
+        "transactions": 10000,
+        "transaction_features": 10000,
+        "alerts": 722,
+        "audit_logs": 5
+      },
+      "post_test_eval_counts": {
+        "transactions": 10000,
+        "transaction_features": 10000,
+        "alerts": 722,
+        "audit_logs": 5
+      },
+      "post_test_loadtest_counts": {
+        "transactions": 3535,
+        "transaction_features": 3535,
+        "alerts": 3336,
+        "audit_logs": 328
+      },
+      "leaked_records": 0,
+      "early_abort": true,
+      "stages": [
+        {
+          "stage": "E2E-Baseline",
+          "endpoint": "http://localhost:8080/api/transactions",
+          "concurrency": 1,
+          "total_requests": 100,
+          "successful_requests": 100,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 9.888,
+          "throughput_rps": 10.11,
+          "avg_latency_ms": 98.81,
+          "p50_latency_ms": 92.01,
+          "p95_latency_ms": 137.11,
+          "p99_latency_ms": 260.61,
+          "max_latency_ms": 340.25,
+          "min_latency_ms": 69.86,
+          "avg_server_ml_latency_ms": null,
+          "safety_aborted": false
+        },
+        {
+          "stage": "E2E-Light",
+          "endpoint": "http://localhost:8080/api/transactions",
+          "concurrency": 5,
+          "total_requests": 250,
+          "successful_requests": 250,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 7.522,
+          "throughput_rps": 33.23,
+          "avg_latency_ms": 149.26,
+          "p50_latency_ms": 135.55,
+          "p95_latency_ms": 248.91,
+          "p99_latency_ms": 318.06,
+          "max_latency_ms": 399.71,
+          "min_latency_ms": 96.02,
+          "avg_server_ml_latency_ms": null,
+          "safety_aborted": false
+        },
+        {
+          "stage": "E2E-Moderate",
+          "endpoint": "http://localhost:8080/api/transactions",
+          "concurrency": 10,
+          "total_requests": 500,
+          "successful_requests": 500,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 15.561,
+          "throughput_rps": 32.13,
+          "avg_latency_ms": 309.39,
+          "p50_latency_ms": 250.04,
+          "p95_latency_ms": 634.04,
+          "p99_latency_ms": 1101.63,
+          "max_latency_ms": 2110.99,
+          "min_latency_ms": 131.11,
+          "avg_server_ml_latency_ms": null,
+          "safety_aborted": false
+        },
+        {
+          "stage": "E2E-High",
+          "endpoint": "http://localhost:8080/api/transactions",
+          "concurrency": 25,
+          "total_requests": 1000,
+          "successful_requests": 1000,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 51.74,
+          "throughput_rps": 19.33,
+          "avg_latency_ms": 1283.37,
+          "p50_latency_ms": 488.9,
+          "p95_latency_ms": 4919.91,
+          "p99_latency_ms": 8508.72,
+          "max_latency_ms": 13973.62,
+          "min_latency_ms": 270.46,
+          "avg_server_ml_latency_ms": null,
+          "safety_aborted": false
+        },
+        {
+          "stage": "E2E-Stress",
+          "endpoint": "http://localhost:8080/api/transactions",
+          "concurrency": 50,
+          "total_requests": 1500,
+          "successful_requests": 1500,
+          "failed_requests": 0,
+          "timeout_requests": 0,
+          "error_rate_pct": 0.0,
+          "duration_seconds": 71.393,
+          "throughput_rps": 21.01,
+          "avg_latency_ms": 2352.73,
+          "p50_latency_ms": 1492.04,
+          "p95_latency_ms": 7541.04,
+          "p99_latency_ms": 11813.38,
+          "max_latency_ms": 23823.79,
+          "min_latency_ms": 305.15,
+          "avg_server_ml_latency_ms": null,
+          "safety_aborted": true
+        }
+      ]
+    }
+  },
+  "key_findings": {
+    "best_throughput": {
+      "ml_component_rps": 66.65,
+      "e2e_pipeline_rps": 33.23,
+      "optimal_concurrency": 5
+    },
+    "ml_service_execution_time": {
+      "min_avg_ms": 8.32,
+      "max_avg_ms": 11.21,
+      "inference_stability": "Constant execution latency across all concurrency tiers; client latency inflation driven by single-worker ASGI queue delays"
+    },
+    "fallback_resilience": {
+      "ml_timeout_events": 328,
+      "circuit_breaker_tripped": true,
+      "rules_fallback_success_rate": "100.0%",
+      "http_error_rate": "0.0%"
+    },
+    "safety_circuit_breaker": {
+      "threshold_error_rate_pct": 5.0,
+      "threshold_p95_latency_ms": 5000.0,
+      "ml_component_aborted": false,
+      "e2e_pipeline_aborted": true,
+      "abort_reason": "E2E-Stress p95 latency (7,541.04 ms) exceeded 5,000 ms limit; halted further escalation"
+    }
+  }
+}

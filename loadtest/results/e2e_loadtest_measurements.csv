@@ -1,0 +1,6 @@
+stage_name,target_endpoint,concurrency,total_requests,successful_requests,failed_requests,timeout_requests,error_rate_pct,duration_seconds,throughput_rps,avg_latency_ms,p50_latency_ms,p95_latency_ms,p99_latency_ms,max_latency_ms,min_latency_ms,avg_server_ml_latency_ms,safety_aborted
+E2E-Baseline,http://localhost:8080/api/transactions,1,100,100,0,0,0.0,9.888,10.11,98.81,92.01,137.11,260.61,340.25,69.86,N/A,False
+E2E-Light,http://localhost:8080/api/transactions,5,250,250,0,0,0.0,7.522,33.23,149.26,135.55,248.91,318.06,399.71,96.02,N/A,False
+E2E-Moderate,http://localhost:8080/api/transactions,10,500,500,0,0,0.0,15.561,32.13,309.39,250.04,634.04,1101.63,2110.99,131.11,N/A,False
+E2E-High,http://localhost:8080/api/transactions,25,1000,1000,0,0,0.0,51.74,19.33,1283.37,488.9,4919.91,8508.72,13973.62,270.46,N/A,False
+E2E-Stress,http://localhost:8080/api/transactions,50,1500,1500,0,0,0.0,71.393,21.01,2352.73,1492.04,7541.04,11813.38,23823.79,305.15,N/A,True

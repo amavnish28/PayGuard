@@ -568,7 +568,6 @@ def main() -> None:
     # Tracking metrics
     total_sent: int = 0
     total_failed: int = 0
-    ml_available_count: int = 0
     decision_counts: Dict[str, int] = {"APPROVE": 0, "REVIEW": 0, "BLOCK": 0}
     scenario_breakdown: Dict[str, Dict[str, int]] = {
         "LEGIT": {"sent": 0, "flagged_review_or_block": 0},
@@ -674,13 +673,9 @@ def main() -> None:
             if resp is not None and resp.status_code in (200, 201):
                 resp_data = resp.json()
                 decision = resp_data.get("decision", "UNKNOWN")
-                rule_score = resp_data.get("ruleScore", 0)
-                ml_avail = resp_data.get("mlAvailable", False)
 
                 if decision in decision_counts:
                     decision_counts[decision] += 1
-                if ml_avail:
-                    ml_available_count += 1
 
                 scenario_breakdown[scenario]["sent"] += 1
                 if decision in ("REVIEW", "BLOCK"):
@@ -698,13 +693,13 @@ def main() -> None:
                         pct = (tx_index / args.count) * 100
                         logger.info(
                             f"[Progress] Sent {tx_index}/{args.count} ({pct:.1f}%) | "
-                            f"{account.account_id} [{scenario}] -> {decision} (score={rule_score}, ML={ml_avail}) | "
+                            f"{account.account_id} [{scenario}] -> {decision} | "
                             f"Elapsed: {elapsed:.1f}s"
                         )
                     else:
                         logger.info(
                             f"[Progress] Sent {tx_index} txns | "
-                            f"{account.account_id} [{scenario}] -> {decision} (score={rule_score}, ML={ml_avail}) | "
+                            f"{account.account_id} [{scenario}] -> {decision} | "
                             f"Elapsed: {elapsed:.1f}s"
                         )
             else:
@@ -717,8 +712,6 @@ def main() -> None:
         logger.info("\nSimulation stopped by user (Ctrl+C). Generating report for sent transactions...")
 
     total_wall_clock = round(time.monotonic() - start_wall_time, 2)
-    successful_tx = total_sent - total_failed
-    ml_rate = round(ml_available_count / successful_tx, 4) if successful_tx > 0 else 0.0
 
     report: Dict[str, Any] = {
         "run_config": {
@@ -734,7 +727,6 @@ def main() -> None:
         "total_failed": total_failed,
         "decision_counts": decision_counts,
         "scenario_breakdown": scenario_breakdown,
-        "ml_availability_rate": ml_rate,
         "wall_clock_duration_seconds": total_wall_clock,
         "simulated_time_range": {
             "start": first_sim_time or initial_sim_time.isoformat(),

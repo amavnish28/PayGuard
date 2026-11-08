@@ -124,6 +124,26 @@ The database foundation has been implemented and integrity-tested.
 - [ ] Dockerized application
 - [ ] Final documentation
 
+## Configuration
+
+PayGuard services are configured via environment variables. Copy the `.env.example` template at the repository root to `.env` to configure your local environment:
+
+```bash
+cp .env.example .env
+```
+
+### Key Environment Variables
+
+- `PAYGUARD_JWT_SECRET`: Secret key used for signing and verifying JWT tokens. Outside the `test` profile, application startup will abort if this variable is missing or shorter than 32 characters.
+- `POSTGRES_PASSWORD`: Password for the PostgreSQL container in `docker-compose.yml`.
+- `PAYGUARD_DB_URL`: JDBC datasource connection URL (default: `jdbc:postgresql://localhost:5432/payguard`).
+- `PAYGUARD_DB_USERNAME`: Database user (default: `payguard`).
+- `PAYGUARD_DB_PASSWORD`: Database user password.
+- `PAYGUARD_ADMIN_USERNAME` / `PAYGUARD_ADMIN_PASSWORD` / `PAYGUARD_ADMIN_EMAIL`: Credentials for initial admin user seed.
+- `PAYGUARD_ML_BASE_URL`: Base URL for the FastAPI machine learning service (default: `http://localhost:8001`).
+
+Automated tests run with the `test` Spring profile using dedicated test properties (`application-test.yml`), targeting `payguard_test` with no required external environment variables.
+
 ## Project Structure
 
 ```text

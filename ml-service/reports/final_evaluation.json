@@ -1,0 +1,379 @@
+{
+  "model_version": "xgboost-v1",
+  "thresholds": {
+    "review_threshold": 0.18657,
+    "block_threshold": 0.56667
+  },
+  "gates": {
+    "G1_ground_truth": {
+      "status": "PASS",
+      "matched_rows": 10000,
+      "scenario_counts": {
+        "LEGIT": 8857,
+        "STEALTH": 85,
+        "ODD_HOUR_TRANSFER": 121,
+        "CARD_TESTING": 618,
+        "ACCOUNT_TAKEOVER": 206,
+        "SUBTLE": 113
+      }
+    },
+    "G2_rule_score": {
+      "status": "PASS",
+      "alerts_checked": 722,
+      "mismatches": 0
+    },
+    "G3_ml_probability": {
+      "status": "PASS",
+      "alerts_checked": 722,
+      "mismatches": 0
+    },
+    "G4_hybrid_decision": {
+      "status": "PASS",
+      "alerts_checked": 722,
+      "mismatches": 0
+    },
+    "G5_no_alert_approved": {
+      "status": "PASS",
+      "txns_checked": 9276,
+      "mismatches": 0
+    }
+  },
+  "known_exceptions": [
+    {
+      "transaction_id": "SIM-6adb3870-SIM-ACC-0006-004346",
+      "stored_decision": "NONE (live effective = APPROVE)",
+      "recomputed_tier": "LOW",
+      "recomputed_band": "low",
+      "recomputed_hybrid_decision": "APPROVE",
+      "fallback_decision": "APPROVE",
+      "stored_equals_fallback": true
+    },
+    {
+      "transaction_id": "SIM-6adb3870-SIM-ACC-0013-004347",
+      "stored_decision": "NONE (live effective = APPROVE)",
+      "recomputed_tier": "LOW",
+      "recomputed_band": "low",
+      "recomputed_hybrid_decision": "APPROVE",
+      "fallback_decision": "APPROVE",
+      "stored_equals_fallback": true
+    }
+  ],
+  "c_vs_d_exact_difference": 0,
+  "metrics_flagged": {
+    "A (Rules-only >= 30)": {
+      "tp": 488,
+      "fp": 2,
+      "fn": 655,
+      "tn": 8855,
+      "recall": 0.42694663167104113,
+      "recall_ci_95": [
+        0.3985629629300704,
+        0.4558196993677092
+      ],
+      "precision": 0.9959183673469387,
+      "fpr": 0.00022581009371118888,
+      "fpr_ci_95": [
+        6.192745677366824e-05,
+        0.0008230289954025746
+      ],
+      "f1": 0.5976729944886712
+    },
+    "A2 (Rules-any > 0)": {
+      "tp": 648,
+      "fp": 119,
+      "fn": 495,
+      "tn": 8738,
+      "recall": 0.5669291338582677,
+      "recall_ci_95": [
+        0.5380266390348534,
+        0.5953832571833484
+      ],
+      "precision": 0.8448500651890483,
+      "fpr": 0.013435700575815739,
+      "fpr_ci_95": [
+        0.011240183249942677,
+        0.01605310034446679
+      ],
+      "f1": 0.6785340314136125
+    },
+    "B (ML-only >= review)": {
+      "tp": 560,
+      "fp": 1,
+      "fn": 583,
+      "tn": 8856,
+      "recall": 0.4899387576552931,
+      "recall_ci_95": [
+        0.46104043896390257,
+        0.518904478598067
+      ],
+      "precision": 0.9982174688057041,
+      "fpr": 0.00011290504685559444,
+      "fpr_ci_95": [
+        1.9930791180771323e-05,
+        0.0006393134631986063
+      ],
+      "f1": 0.6572769953051644
+    },
+    "C (Hybrid recomputed)": {
+      "tp": 719,
+      "fp": 3,
+      "fn": 424,
+      "tn": 8854,
+      "recall": 0.6290463692038495,
+      "recall_ci_95": [
+        0.6006533252375622,
+        0.6565749060328269
+      ],
+      "precision": 0.9958448753462604,
+      "fpr": 0.0003387151405667833,
+      "fpr_ci_95": [
+        0.0001152002496167102,
+        0.0009954684003563976
+      ],
+      "f1": 0.7710455764075068
+    },
+    "D (Hybrid live)": {
+      "tp": 719,
+      "fp": 3,
+      "fn": 424,
+      "tn": 8854,
+      "recall": 0.6290463692038495,
+      "recall_ci_95": [
+        0.6006533252375622,
+        0.6565749060328269
+      ],
+      "precision": 0.9958448753462604,
+      "fpr": 0.0003387151405667833,
+      "fpr_ci_95": [
+        0.0001152002496167102,
+        0.0009954684003563976
+      ],
+      "f1": 0.7710455764075068
+    }
+  },
+  "metrics_blocked": {
+    "A (Rules-only >= 30)": null,
+    "A2 (Rules-any > 0)": null,
+    "B (ML-only >= block)": {
+      "tp": 451,
+      "fp": 1,
+      "fn": 692,
+      "tn": 8856,
+      "recall": 0.39457567804024496,
+      "recall_ci_95": [
+        0.36663930377972526,
+        0.4232183106739567
+      ],
+      "precision": 0.9977876106194691,
+      "fpr": 0.00011290504685559444,
+      "fpr_ci_95": [
+        1.9930791180771323e-05,
+        0.0006393134631986063
+      ],
+      "f1": 0.5655172413793104
+    },
+    "C (Hybrid recomputed)": {
+      "tp": 454,
+      "fp": 1,
+      "fn": 689,
+      "tn": 8856,
+      "recall": 0.39720034995625547,
+      "recall_ci_95": [
+        0.3692229556964208,
+        0.42586641939326914
+      ],
+      "precision": 0.9978021978021978,
+      "fpr": 0.00011290504685559444,
+      "fpr_ci_95": [
+        1.9930791180771323e-05,
+        0.0006393134631986063
+      ],
+      "f1": 0.5682102628285356
+    },
+    "D (Hybrid live)": {
+      "tp": 454,
+      "fp": 1,
+      "fn": 689,
+      "tn": 8856,
+      "recall": 0.39720034995625547,
+      "recall_ci_95": [
+        0.3692229556964208,
+        0.42586641939326914
+      ],
+      "precision": 0.9978021978021978,
+      "fpr": 0.00011290504685559444,
+      "fpr_ci_95": [
+        1.9930791180771323e-05,
+        0.0006393134631986063
+      ],
+      "f1": 0.5682102628285356
+    }
+  },
+  "per_scenario": {
+    "ACCOUNT_TAKEOVER": {
+      "total": 206,
+      "systems": {
+        "A (Rules >= 30)": {
+          "count": 146,
+          "rate": 0.7087378640776699
+        },
+        "A2 (Rules > 0)": {
+          "count": 196,
+          "rate": 0.9514563106796117
+        },
+        "B (ML >= review)": {
+          "count": 155,
+          "rate": 0.7524271844660194
+        },
+        "C (Hybrid recomputed)": {
+          "count": 181,
+          "rate": 0.8786407766990292
+        },
+        "D (Hybrid live)": {
+          "count": 181,
+          "rate": 0.8786407766990292
+        }
+      }
+    },
+    "CARD_TESTING": {
+      "total": 618,
+      "systems": {
+        "A (Rules >= 30)": {
+          "count": 252,
+          "rate": 0.4077669902912621
+        },
+        "A2 (Rules > 0)": {
+          "count": 308,
+          "rate": 0.49838187702265374
+        },
+        "B (ML >= review)": {
+          "count": 287,
+          "rate": 0.46440129449838186
+        },
+        "C (Hybrid recomputed)": {
+          "count": 408,
+          "rate": 0.6601941747572816
+        },
+        "D (Hybrid live)": {
+          "count": 408,
+          "rate": 0.6601941747572816
+        }
+      }
+    },
+    "ODD_HOUR_TRANSFER": {
+      "total": 121,
+      "systems": {
+        "A (Rules >= 30)": {
+          "count": 90,
+          "rate": 0.743801652892562
+        },
+        "A2 (Rules > 0)": {
+          "count": 121,
+          "rate": 1.0
+        },
+        "B (ML >= review)": {
+          "count": 101,
+          "rate": 0.8347107438016529
+        },
+        "C (Hybrid recomputed)": {
+          "count": 113,
+          "rate": 0.9338842975206612
+        },
+        "D (Hybrid live)": {
+          "count": 113,
+          "rate": 0.9338842975206612
+        }
+      }
+    },
+    "SUBTLE": {
+      "total": 113,
+      "systems": {
+        "A (Rules >= 30)": {
+          "count": 0,
+          "rate": 0.0
+        },
+        "A2 (Rules > 0)": {
+          "count": 23,
+          "rate": 0.20353982300884957
+        },
+        "B (ML >= review)": {
+          "count": 17,
+          "rate": 0.1504424778761062
+        },
+        "C (Hybrid recomputed)": {
+          "count": 17,
+          "rate": 0.1504424778761062
+        },
+        "D (Hybrid live)": {
+          "count": 17,
+          "rate": 0.1504424778761062
+        }
+      }
+    },
+    "STEALTH": {
+      "total": 85,
+      "systems": {
+        "A (Rules >= 30)": {
+          "count": 0,
+          "rate": 0.0
+        },
+        "A2 (Rules > 0)": {
+          "count": 0,
+          "rate": 0.0
+        },
+        "B (ML >= review)": {
+          "count": 0,
+          "rate": 0.0
+        },
+        "C (Hybrid recomputed)": {
+          "count": 0,
+          "rate": 0.0
+        },
+        "D (Hybrid live)": {
+          "count": 0,
+          "rate": 0.0
+        }
+      }
+    },
+    "LEGIT": {
+      "total": 8857,
+      "systems": {
+        "A (Rules >= 30)": {
+          "count": 2,
+          "rate": 0.00022581009371118888
+        },
+        "A2 (Rules > 0)": {
+          "count": 119,
+          "rate": 0.013435700575815739
+        },
+        "B (ML >= review)": {
+          "count": 1,
+          "rate": 0.00011290504685559444
+        },
+        "C (Hybrid recomputed)": {
+          "count": 3,
+          "rate": 0.0003387151405667833
+        },
+        "D (Hybrid live)": {
+          "count": 3,
+          "rate": 0.0003387151405667833
+        }
+      }
+    }
+  },
+  "fraud_overlap": {
+    "total_fraud": 1143,
+    "flagged_by_both": 329,
+    "flagged_by_both_rate": 0.2878390201224847,
+    "flagged_by_rules_only": 159,
+    "flagged_by_rules_only_rate": 0.13910761154855644,
+    "flagged_by_ml_only": 231,
+    "flagged_by_ml_only_rate": 0.2020997375328084,
+    "flagged_by_neither": 424,
+    "flagged_by_neither_rate": 0.37095363079615046
+  },
+  "average_precision": {
+    "ml_probability": 0.8448535188002342,
+    "rule_score": 0.599635147970061
+  }
+}

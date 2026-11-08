@@ -1,0 +1,6 @@
+stage_name,target_endpoint,concurrency,total_requests,successful_requests,failed_requests,timeout_requests,error_rate_pct,duration_seconds,throughput_rps,avg_latency_ms,p50_latency_ms,p95_latency_ms,p99_latency_ms,max_latency_ms,min_latency_ms,avg_server_ml_latency_ms,safety_aborted
+ML-Baseline,http://localhost:8001/api/v1/predict,1,100,100,0,0,0.0,2.397,41.71,23.9,21.41,35.14,91.72,93.01,17.63,8.6,False
+ML-Light,http://localhost:8001/api/v1/predict,5,250,250,0,0,0.0,3.751,66.65,74.48,67.76,128.32,160.0,195.62,31.72,10.05,False
+ML-Moderate,http://localhost:8001/api/v1/predict,10,500,500,0,0,0.0,11.303,44.24,224.77,142.18,695.36,1428.09,2652.0,68.87,11.21,False
+ML-High,http://localhost:8001/api/v1/predict,25,1000,1000,0,0,0.0,30.329,32.97,752.56,424.69,2324.62,3861.26,6038.39,128.17,9.87,False
+ML-Stress,http://localhost:8001/api/v1/predict,50,1500,1500,0,0,0.0,50.109,29.93,1649.87,1168.91,4957.59,7148.12,13234.45,136.16,8.32,False

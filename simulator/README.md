@@ -175,7 +175,6 @@ At the conclusion of each simulation run, results are output to the terminal and
       "flagged_review_or_block": 0
     }
   },
-  "ml_availability_rate": 1.0,
   "wall_clock_duration_seconds": 20.08,
   "simulated_time_range": {
     "start": "2026-10-01T00:04:12+05:30",
@@ -188,7 +187,6 @@ At the conclusion of each simulation run, results are output to the terminal and
 - `total_failed`: Number of failed or unrecoverable HTTP requests.
 - `decision_counts`: Aggregated server decisions (`APPROVE`, `REVIEW`, `BLOCK`).
 - `scenario_breakdown`: Transaction volume and alert counts per scenario.
-- `ml_availability_rate`: Fraction of responses where the ML service successfully returned predictions.
 - `wall_clock_duration_seconds`: Real time taken to execute the simulation.
 - `simulated_time_range`: Span of virtual time covered by the generated transactions.
 
